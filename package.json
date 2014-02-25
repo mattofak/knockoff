@@ -1,0 +1,6 @@
+{
+	"name": "tassembly",
+	"dependencies": {
+		"domino": "x.x.x"
+	}
+}
