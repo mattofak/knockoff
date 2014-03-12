@@ -1,5 +1,5 @@
 var c = require('./KnockoutCompiler.js'),
-	qt = require('./quicktemplate.js');
+	qt = require('./tassembly.js');
 
 function test(input) {
 		// compile the knockout template to QT JSON

@@ -16,9 +16,12 @@ function handleNode(node, cb, options) {
 	// XXX: keep this for client-side re-execution?
 	//node.removeAttribute('data-bind');
 	var bindObj = KnockoutExpression.parseObjectLiteral(dataBind),
-		tpl,
+		bindOpts, ctlFn, ctlOpts,
 		ret = {};
-	// attr
+
+	/*
+	 * attr
+	 */
 	if (bindObj.attr) {
 		// remove same attributes from element
 		Object.keys(bindObj.attr).forEach(function(name) {
@@ -28,37 +31,41 @@ function handleNode(node, cb, options) {
 		ret.attr = ['attr', bindObj.attr];
 	}
 
+	/*
+	 * Different kinds of content
+	 */
 	if (bindObj.text) {
 		// replace content with text directive
 		ret.content = ['text', bindObj.text];
 		return ret;
 	}
 
-	if (bindObj.foreach) {
-		tpl = new DOMCompiler().compile(node, options);
-		var foreachOptions = {
-			data: bindObj.foreach,
-			tpl: tpl
-		};
-		ret.content = ['foreach', foreachOptions];
-		return ret;
-	}
-
-	if (bindObj['if'] || bindObj.ifnot) {
-
-		var name = bindObj['if'] ? 'if' : 'ifnot';
-		tpl = new DOMCompiler().compile(node, options);
-		return {
-			content: [name, {
-				tpl: tpl,
-				data: bindObj[name]
-			}]
-		};
+	// template: { foreach: dataSource } or foreach: { data: dataSource }
+	var templateTriggers = ['foreach', 'with', 'if', 'ifnot'];
+	bindOpts = bindObj.template || bindObj;
+	ctlOpts = {};
+	for (var i = 0; i < templateTriggers.length; i++) {
+		var trigger = templateTriggers[i];
+		if (trigger in bindOpts) {
+			ctlFn = trigger;
+			ctlOpts.data = ctlOpts[trigger];
+			if (trigger === 'foreach' && bindOpts.as) {
+				ctlOpts.as = bindOpts.as + '';
+			}
+			if (!bindOpts.name) {
+				ctlOpts.tpl = new DOMCompiler().compile(node, options);
+			} else {
+				// Only allow statically named templates for now
+				ctlOpts.name = bindOpts.name + '';
+			}
+			ret.content = [ctlFn, ctlOpts];
+			return ret;
+		}
 	}
 }
 
 /**
- * Compile a Knockout template to QuickTemplate JSON
+ * Compile a Knockout template to TAssembly JSON
  *
  * Accepts either a template string or a DOM node.
  */
