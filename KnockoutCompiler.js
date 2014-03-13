@@ -40,7 +40,9 @@ function handleNode(node, cb, options) {
 		return ret;
 	}
 
-	// template: { foreach: dataSource } or foreach: { data: dataSource }
+	// Special template functionality both inside
+	// template: { foreach: dataSource }
+	// or stand-alone as in foreach: { data: dataSource }
 	var templateTriggers = ['foreach', 'with', 'if', 'ifnot'];
 	bindOpts = bindObj.template || bindObj;
 	ctlOpts = {};
@@ -48,7 +50,7 @@ function handleNode(node, cb, options) {
 		var trigger = templateTriggers[i];
 		if (trigger in bindOpts) {
 			ctlFn = trigger;
-			ctlOpts.data = bindOpts[ctlFn];
+			ctlOpts.data = bindOpts[ctlFn] || bindOpts.data;
 			if (trigger === 'foreach' && bindOpts.as) {
 				ctlOpts.as = bindOpts.as + '';
 			}
@@ -62,7 +64,8 @@ function handleNode(node, cb, options) {
 			return ret;
 		}
 	}
-	// Simple template
+
+	// Simple template without foreach / with / if / ifnot
 	if (bindObj.template) {
 		ctlOpts.data = bindOpts.data;
 		if (!bindOpts.name) {
