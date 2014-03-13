@@ -6,10 +6,10 @@ ta.partials.testPartial = c.compile('<span data-bind="text:foo"></span><span dat
 
 function test(input) {
 		// compile the knockout template to TAssembly JSON
-	var json = c.compile(input),
+	var json = c.compile(input);
 		// now compile the TAssembly JSON to a JS method
 		// could also interpret it with ta.render(json, testData);
-		tpl = ta.compile(json);
+		//tpl = ta.compile(json);
 
 	var testData = {
 		items: [
@@ -39,7 +39,7 @@ function test(input) {
 	console.log('TAssembly JSON:');
 	console.log(JSON.stringify(json, null, 2));
 	console.log('Rendered HTML:');
-	console.log(tpl(testData));
+	console.log(ta.render(json, testData));
 }
 
 test('<div data-bind="attr: {title: name}, foreach: items">'
@@ -61,3 +61,5 @@ test('hello world<span>foo</span><div data-bind="text: content">ipsum</div>');
 test('hello world<span>foo</span><div data-bind="with: obj"><span data-bind="text: foo">hopefully foo</span><span data-bind="text:bar">hopefully bar</span></div>');
 
 test('hello world<div data-bind="template:{name:' + "'testPartial'" + ', data: obj}"></div>');
+
+test('<div data-bind="visible:predFalse"><span data-bind="text:name"></span></div>');

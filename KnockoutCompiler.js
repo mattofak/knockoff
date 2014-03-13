@@ -31,6 +31,25 @@ function handleNode(node, cb, options) {
 		ret.attr = ['attr', bindObj.attr];
 	}
 
+	if (bindObj.visible) {
+		if (!ret.attr) {
+			ret.attr = ['attr',{}];
+		}
+		ret.attr[1].style = {
+			// Implement visible as inline style for now; consider moving to
+			// class / make this configurable
+			v: ret.attr[1].style || null,
+			append: [
+			{
+				'if': bindObj.visible,
+				v: 'display: none !important;'
+			}
+			]
+		};
+		// Don't set ret.content, which lets the compiler descend into it
+		return ret;
+	}
+
 	/*
 	 * Different kinds of content
 	 */

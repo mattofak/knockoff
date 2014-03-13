@@ -145,9 +145,25 @@ TAssembly.prototype.ctlFn_ifnot = function(options, scope, cb) {
 };
 
 TAssembly.prototype.ctlFn_attr = function(options, scope, cb) {
-	var self = this;
+	var self = this,
+		attVal;
 	Object.keys(options).forEach(function(name) {
-		var attVal = self._evalExpr(options[name], scope);
+		var attObj = options[name];
+		if (typeof attObj === 'object') {
+			attVal = attObj.v || '';
+			if (attObj.append && Array.isArray(attObj.append)) {
+				attObj.append.forEach(function(app) {
+					if (app.if && self._evalExpr(app, scope)) {
+						attVal += app.v || '';
+					}
+				});
+			}
+			if (attObj.v === null && !attVal) {
+				attVal = null;
+			}
+		} else {
+			attVal = self._evalExpr(options[name], scope);
+		}
 		if (attVal !== null) {
 			cb(' ' + name + '="'
 				// TODO: context-sensitive sanitization on href / src / style
@@ -283,21 +299,6 @@ TAssembly.prototype.render = function(template, scope, cb) {
 				}
 				cb( ('' + val) // convert to string
 						.replace(/[<&]/g, this._xmlEncoder)); // and escape
-			} else if ( fnName === 'attr' ) {
-				var keys = Object.keys(bit[1]),
-					options = bit[1];
-				for (var j = 0; j < keys.length; j++) {
-					var name = keys[j];
-					val = self._evalExpr(options[name], scope);
-					if (val !== null) {
-						if (!val && val !== 0) {
-							val = '';
-						}
-						cb(' ' + name + '="'
-							+ (''+val).replace(/[<&"]/g, this._xmlEncoder)
-							+ '"');
-					}
-				}
 			} else {
 
 				try {
