@@ -44,7 +44,7 @@ function handleNode(node, cb, options) {
 	var templateTriggers = ['foreach', 'with', 'if', 'ifnot'];
 	bindOpts = bindObj.template || bindObj;
 	ctlOpts = {};
-	for (var i = 0; i < templateTriggers.length; i++) {
+	for (var i = 0; i <= templateTriggers.length; i++) {
 		var trigger = templateTriggers[i];
 		if (trigger in bindOpts) {
 			ctlFn = trigger;
@@ -62,6 +62,21 @@ function handleNode(node, cb, options) {
 			return ret;
 		}
 	}
+	// Simple template
+	if (bindObj.template) {
+		ctlOpts.data = bindOpts.data;
+		if (!bindOpts.name) {
+			ctlOpts.tpl = new DOMCompiler().compile(node, options);
+		} else {
+			// Only allow statically named templates defined on the model
+			ctlOpts.tpl = bindOpts.name + '';
+		}
+		ret.content = ['template', ctlOpts];
+		return ret;
+	}
+
+
+	return ret;
 }
 
 /**

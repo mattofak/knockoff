@@ -1,6 +1,9 @@
 var c = require('./KnockoutCompiler.js'),
 	ta = require('./tassembly.js');
 
+// Register a partial
+ta.partials.testPartial = c.compile('<span data-bind="text:foo"></span><span data-bind="text:bar"></span>');
+
 function test(input) {
 		// compile the knockout template to TAssembly JSON
 	var json = c.compile(input),
@@ -53,6 +56,8 @@ test('<div data-bind="text: 2">Hello world</div>');
 // arithmetic expression
 test('<div data-bind="text: 2 + 2 &#x22;">Hello world</div>');
 
-test('hello world<span>foo</span><div data-bind="text: content">ipsum</div>')
+test('hello world<span>foo</span><div data-bind="text: content">ipsum</div>');
 
-test('hello world<span>foo</span><div data-bind="with: obj"><span data-bind="text: foo">hopefully foo</span><span data-bind="text:bar">hopefully bar</span></div>')
+test('hello world<span>foo</span><div data-bind="with: obj"><span data-bind="text: foo">hopefully foo</span><span data-bind="text:bar">hopefully bar</span></div>');
+
+test('hello world<div data-bind="template:{name:' + "'testPartial'" + ', data: obj}"></div>');

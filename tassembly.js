@@ -99,7 +99,11 @@ TAssembly.prototype._getTemplate = function (tpl, cb) {
 	if (Array.isArray(tpl)) {
 		return tpl;
 	} else {
-		return this.partials(tpl);
+		// String literal: strip quotes
+		if (/^'.*'$/.test(tpl)) {
+			tpl = tpl.slice(1,-1).replace(/\\'/g, "'");
+		}
+		return this.partials[tpl];
 	}
 };
 
