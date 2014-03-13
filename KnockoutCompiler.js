@@ -48,15 +48,15 @@ function handleNode(node, cb, options) {
 		var trigger = templateTriggers[i];
 		if (trigger in bindOpts) {
 			ctlFn = trigger;
-			ctlOpts.data = ctlOpts[trigger];
+			ctlOpts.data = bindOpts[ctlFn];
 			if (trigger === 'foreach' && bindOpts.as) {
 				ctlOpts.as = bindOpts.as + '';
 			}
 			if (!bindOpts.name) {
 				ctlOpts.tpl = new DOMCompiler().compile(node, options);
 			} else {
-				// Only allow statically named templates for now
-				ctlOpts.name = bindOpts.name + '';
+				// Only allow statically named templates defined on the model
+				ctlOpts.tpl = bindOpts.name + '';
 			}
 			ret.content = [ctlFn, ctlOpts];
 			return ret;

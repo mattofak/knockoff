@@ -1,12 +1,12 @@
 var c = require('./KnockoutCompiler.js'),
-	qt = require('./tassembly.js');
+	ta = require('./tassembly.js');
 
 function test(input) {
-		// compile the knockout template to QT JSON
+		// compile the knockout template to TAssembly JSON
 	var json = c.compile(input),
-		// now compile the QT JSON to a JS method
-		// could also interpret it with qt.render(json, testData);
-		tpl = qt.compile(json);
+		// now compile the TAssembly JSON to a JS method
+		// could also interpret it with ta.render(json, testData);
+		tpl = ta.compile(json);
 
 	var testData = {
 		items: [
@@ -19,6 +19,10 @@ function test(input) {
 				value: 'value2'
 			}
 		],
+		obj: {
+			foo: "foo",
+			bar: "bar"
+		},
 		name: 'Some name',
 		content: 'Some sample content',
 		id: 'mw1234',
@@ -29,7 +33,7 @@ function test(input) {
 	console.log('=========================');
 	console.log('Knockout template:');
 	console.log(input);
-	console.log('QT JSON:');
+	console.log('TAssembly JSON:');
 	console.log(JSON.stringify(json, null, 2));
 	console.log('Rendered HTML:');
 	console.log(tpl(testData));
@@ -50,3 +54,5 @@ test('<div data-bind="text: 2">Hello world</div>');
 test('<div data-bind="text: 2 + 2 &#x22;">Hello world</div>');
 
 test('hello world<span>foo</span><div data-bind="text: content">ipsum</div>')
+
+test('hello world<span>foo</span><div data-bind="with: obj"><span data-bind="text: foo">hopefully foo</span><span data-bind="text:bar">hopefully bar</span></div>')
