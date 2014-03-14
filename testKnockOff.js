@@ -1,15 +1,16 @@
-var c = require('./KnockoutCompiler.js'),
-	ta = require('tassembly');
+var KO = require('./knockoff.js'),
+	c = require('./KnockoutCompiler');
 
+
+var ko = new KO.KnockOff();
 // Register a partial
-ta.partials.testPartial = c.compile('<span data-bind="text:foo"></span><span data-bind="text:bar"></span>');
+ko.registerPartial('testPartial',
+		'<span data-bind="text:foo"></span><span data-bind="text:bar"></span>');
 
 function test(input) {
-		// compile the knockout template to TAssembly JSON
-	var json = c.compile(input);
-		// now compile the TAssembly JSON to a JS method
-		// could also interpret it with ta.render(json, testData);
-		//tpl = ta.compile(json);
+	var json = c.compile(input),
+		// Also get JSON separately so that we can print it below
+		tpl = ko.compile(input);
 
 	var testData = {
 		items: [
@@ -39,7 +40,7 @@ function test(input) {
 	console.log('TAssembly JSON:');
 	console.log(JSON.stringify(json, null, 2));
 	console.log('Rendered HTML:');
-	console.log(ta.render(json, testData));
+	console.log(tpl(testData));
 }
 
 test('<div data-bind="attr: {title: name}, foreach: items">'
@@ -51,6 +52,7 @@ test('<div data-bind="if: predFalse">Hello world</div>');
 test('<div data-bind="text: &quot;constant stri\'ng expression&quot;">Hello world</div>');
 
 // constant number
+
 test('<div data-bind="text: 2">Hello world</div>');
 
 // arithmetic expression

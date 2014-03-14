@@ -1,6 +1,7 @@
 {
-	"name": "KOTASM",
+	"name": "knockoff",
 	"version": "0.1.0",
+	"main": "knockoff.js",
 	"dependencies": {
 		"tassembly": "git+https://github.com/gwicke/tassembly.git#master"
 	}
