@@ -63,3 +63,7 @@ test('hello world<span>foo</span><div data-bind="with: obj"><span data-bind="tex
 test('hello world<div data-bind="template:{name:' + "'testPartial'" + ', data: obj}"></div>');
 
 test('<div data-bind="visible:predFalse"><span data-bind="text:name"></span></div>');
+
+test('<div data-bind="with:predFalse"><span data-bind="text:name"></span></div>');
+
+test('<div data-bind="with:obj"><span data-bind="text:foo"></span></div>');

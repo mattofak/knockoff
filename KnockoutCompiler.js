@@ -31,7 +31,7 @@ function handleNode(node, cb, options) {
 		ret.attr = ['attr', bindObj.attr];
 	}
 
-	if (bindObj.visible) {
+	if (bindObj.visible || bindObj['with']) {
 		if (!ret.attr) {
 			ret.attr = ['attr',{}];
 		}
@@ -39,19 +39,21 @@ function handleNode(node, cb, options) {
 			// Implement visible as inline style for now; consider moving to
 			// class / make this configurable
 			v: ret.attr[1].style || null,
-			append: [
+			app: [
 			{
-				'if': bindObj.visible,
+				'ifnot': bindObj.visible || bindObj['with'],
 				v: 'display: none !important;'
 			}
 			]
 		};
 		// Don't set ret.content, which lets the compiler descend into it
-		return ret;
+		if (bindObj.visible) {
+			return ret;
+		}
 	}
 
 	/*
-	 * Different kinds of content
+	 * Now for the content
 	 */
 	if (bindObj.text) {
 		// replace content with text directive
@@ -63,6 +65,7 @@ function handleNode(node, cb, options) {
 	// template: { foreach: dataSource }
 	// or stand-alone as in foreach: { data: dataSource }
 	var templateTriggers = ['foreach', 'with', 'if', 'ifnot'];
+	// Descend into a template member if there is one
 	bindOpts = bindObj.template || bindObj;
 	ctlOpts = {};
 	for (var i = 0; i <= templateTriggers.length; i++) {

@@ -148,21 +148,25 @@ TAssembly.prototype.ctlFn_attr = function(options, scope, cb) {
 	var self = this,
 		attVal;
 	Object.keys(options).forEach(function(name) {
-		var attObj = options[name];
-		if (typeof attObj === 'object') {
-			attVal = attObj.v || '';
-			if (attObj.append && Array.isArray(attObj.append)) {
-				attObj.append.forEach(function(app) {
-					if (app.if && self._evalExpr(app, scope)) {
-						attVal += app.v || '';
+		var attValObj = options[name];
+		if (typeof attValObj === 'string') {
+			attVal = self._evalExpr(options[name], scope);
+		} else {
+			// Must be an object
+			attVal = attValObj.v || '';
+			if (attValObj.app && Array.isArray(attValObj.app)) {
+				attValObj.app.forEach(function(appItem) {
+					if (appItem['if'] && self._evalExpr(appItem['if'], scope)) {
+						attVal += appItem.v || '';
+					}
+					if (appItem.ifnot && ! self._evalExpr(appItem.ifnot, scope)) {
+						attVal += appItem.v || '';
 					}
 				});
 			}
-			if (attObj.v === null && !attVal) {
+			if (!attVal && attValObj.v === null) {
 				attVal = null;
 			}
-		} else {
-			attVal = self._evalExpr(options[name], scope);
 		}
 		if (attVal !== null) {
 			cb(' ' + name + '="'
