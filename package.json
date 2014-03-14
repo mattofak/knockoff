@@ -1,6 +1,7 @@
 {
-	"name": "tassembly",
+	"name": "KOTASM",
+	"version": "0.1.0",
 	"dependencies": {
-		"domino": "x.x.x"
+		"tassembly": "git+https://github.com/gwicke/tassembly.git#master"
 	}
 }

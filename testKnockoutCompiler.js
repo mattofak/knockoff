@@ -1,5 +1,5 @@
 var c = require('./KnockoutCompiler.js'),
-	ta = require('./tassembly.js');
+	ta = require('tassembly');
 
 // Register a partial
 ta.partials.testPartial = c.compile('<span data-bind="text:foo"></span><span data-bind="text:bar"></span>');
