@@ -14,7 +14,7 @@ function handleNode(node, cb, options) {
 		return {};
 	}
 	// XXX: keep this for client-side re-execution?
-	//node.removeAttribute('data-bind');
+	node.removeAttribute('data-bind');
 	var bindObj = KnockoutExpression.parseObjectLiteral(dataBind),
 		bindOpts, ctlFn, ctlOpts,
 		ret = {};
