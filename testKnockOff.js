@@ -7,22 +7,17 @@ var ko = new KO.KnockOff();
 ko.registerPartial('testPartial',
 		'<span data-bind="text:foo"></span><span data-bind="text:bar"></span>');
 
-function test(input) {
-	var json = c.compile(input),
-		// Also get JSON separately so that we can print it below
-		tpl = ko.compile(input);
-
-	var testData = {
-		items: [
-			{
-				key: 'key1',
-				value: 'value1'
-			},
-			{
-				key: 'key2',
-				value: 'value2'
-			}
-		],
+var testData = {
+	items: [
+	{
+		key: 'key1',
+		value: 'value1'
+	},
+	{
+		key: 'key2',
+		value: 'value2'
+	}
+	],
 		obj: {
 			foo: "foo",
 			bar: "bar"
@@ -32,13 +27,17 @@ function test(input) {
 		id: 'mw1234',
 		predTrue: true,
 		predFalse: false
-	};
+};
+
+
+function test(input) {
+	var tpl = ko.compile(input);
 
 	console.log('=========================');
 	console.log('Knockout template:');
 	console.log(input);
 	console.log('TAssembly JSON:');
-	console.log(JSON.stringify(json, null, 2));
+	console.log(JSON.stringify(c.compile(input), null, 2));
 	console.log('Rendered HTML:');
 	console.log(tpl(testData));
 }
