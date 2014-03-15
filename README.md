@@ -1,4 +1,4 @@
 KnockOff
 ========
 
-KnockoutJS to Tassembly compiler
+KnockoutJS to [Tassembly](https://github.com/gwicke/tassembly) compiler
