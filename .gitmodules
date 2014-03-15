@@ -1,0 +1,3 @@
+[submodule "modules/knockoff.tassembly"]
+	path = modules/knockoff.tassembly
+	url = https://github.com/gwicke/tassembly.git
