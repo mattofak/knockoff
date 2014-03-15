@@ -10,28 +10,27 @@ ko.registerPartial('testPartial',
 var testData = {
 	arr: [1,2,3,4,5,6,7],
 	items: [
-	{
-		key: 'key1',
-		value: 'value1'
-	},
-	{
-		key: 'key2',
-		value: 'value2'
-	}
-	],
-		obj: {
-			foo: "foo",
-			bar: "bar"
+		{
+			key: 'key1',
+			value: 'value1'
 		},
-		name: 'Some name',
-		content: 'Some sample content',
-		id: 'mw1234',
-		predTrue: true,
-		predFalse: false
-};
-
-testData.arr.test = function(i) {
-	return i + 'test';
+		{
+			key: 'key2',
+			value: 'value2'
+		}
+	],
+	obj: {
+		foo: "foo",
+		bar: "bar"
+	},
+	name: 'Some name',
+	content: 'Some sample content',
+	id: 'mw1234',
+	predTrue: true,
+	predFalse: false,
+	test: function(i) {
+		return i + 'test';
+	}
 };
 
 
