@@ -8,6 +8,7 @@ ko.registerPartial('testPartial',
 		'<span data-bind="text:foo"></span><span data-bind="text:bar"></span>');
 
 var testData = {
+	arr: [1,2,3,4,5,6,7],
 	items: [
 	{
 		key: 'key1',
@@ -27,6 +28,10 @@ var testData = {
 		id: 'mw1234',
 		predTrue: true,
 		predFalse: false
+};
+
+testData.arr.test = function(i) {
+	return i + 'test';
 };
 
 
@@ -68,3 +73,7 @@ test('<div data-bind="visible:predFalse"><span data-bind="text:name"></span></di
 test('<div data-bind="with:predFalse"><span data-bind="text:name"></span></div>');
 
 test('<div data-bind="with:obj"><span data-bind="text:foo"></span></div>');
+
+test('<div data-bind="attr:{id:id},foreach:items"><div data-bind="attr:{id:key},text:value"></div></div>');
+
+test('<div data-bind="foreach:arr"><div data-bind="text:$parent.test($data)"></div></div>');

@@ -3,6 +3,7 @@
 	"version": "0.1.0",
 	"main": "knockoff.js",
 	"dependencies": {
-		"tassembly": "git+https://github.com/gwicke/tassembly.git#master"
+		"tassembly": "git+https://github.com/gwicke/tassembly.git#master",
+		"domino": "1.x.x"
 	}
 }
