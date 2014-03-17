@@ -18,7 +18,7 @@ var stringDouble = '"(?:[^"\\\\]|\\\\.)*"',
 	// Match text (at least two characters) that does not contain any of the above special characters,
 	// although some of the special characters are allowed to start it (all but the colon and comma).
 	// The text can contain spaces, but leading or trailing spaces are skipped.
-	everyThingElse = '[^\\s:,/][^' + specials + ']*[^\\s' + specials + ']',
+	everyThingElse = '[^\\s:,{\\(/][^' + specials + ']*[^\\s' + specials + ']',
 	// Match any non-space character not matched already. This will match colons and commas, since they're
 	// not matched by "everyThingElse", but will also match any other single character that wasn't already
 	// matched (for example: in "a: 1, b: 2", each of the non-space characters will be matched by oneNotSpace).
@@ -62,7 +62,7 @@ function parseObjectLiteral(objectLiteralString) {
 							// Number
 							values = Number(values);
 						} else if (/^".*"$/.test(values)) {
-							// Quoted string literal, normalize to double
+							// Quoted string literal, normalize to single
 							// quote
 							values = "'" + values.slice(1, -1).replace(/'/g, "\\'") + "'";
 						}
@@ -103,6 +103,11 @@ function parseObjectLiteral(objectLiteralString) {
 			} else if (!key && !values) {
 				key = (c === 34 || c === 39) /* '"', "'" */ ? tok.slice(1, -1) : tok;
 				continue;
+			}
+			if (/^".*"$/.test(tok)) {
+				// Quoted string literal, normalize to single
+				// quote
+				tok = "'" + tok.slice(1, -1).replace(/'/g, "\\'") + "'";
 			}
 			if (values) {
 				values += tok;

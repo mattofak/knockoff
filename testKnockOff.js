@@ -76,3 +76,5 @@ test('<div data-bind="with:obj"><span data-bind="text:foo"></span></div>');
 test('<div data-bind="attr:{id:id},foreach:items"><div data-bind="attr:{id:key},text:value"></div></div>');
 
 test('<div data-bind="foreach:arr"><div data-bind="text:$parent.test($data)"></div></div>');
+
+test('<div data-bind="text: test( { id : &quot;id&quot; } )"></div>');
