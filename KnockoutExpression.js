@@ -98,7 +98,7 @@ function parseObjectLiteral(objectLiteralString) {
 							// Quoted string literal, normalize to single
 							// quote
 							values = "'" + values.slice(1, -1).replace(/'/g, "\\'") + "'";
-						} else if (!/^[a-zA-Z_$]/.test(values)) {
+						} else if (!/^[a-zA-Z_$]|^'.*'$/.test(values)) {
 							// definitely invalid variable: convert to string
 							values = "'" + values.replace(/'/g, "\\'") + "'";
 						} else {
@@ -116,7 +116,7 @@ function parseObjectLiteral(objectLiteralString) {
 							},
 								ctxKeysRe = new RegExp('\\$('
 											+ Object.keys(ctxMap).join('|')
-											+ ')(?=[^a-zA-Z_$])', 'g');
+											+ ')(?=[^a-zA-Z_$]|$)', 'g');
 							// Prefix all non-dollar vars with d.
 							values = prefixModelVars(values);
 
