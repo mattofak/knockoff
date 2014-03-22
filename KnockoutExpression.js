@@ -123,7 +123,6 @@ function parseObjectLiteral(objectLiteralString) {
 							// Now translate all references to special context
 							// variables
 							values = values.replace(ctxKeysRe, function(match) {
-								console.log('match', match);
 								var tassemblyName = ctxMap[match.replace(/^\$/,'')];
 								if (tassemblyName) {
 									return tassemblyName;
