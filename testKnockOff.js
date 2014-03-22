@@ -35,14 +35,13 @@ var testData = {
 
 
 function test(input) {
-	var tpl = ko.compile(input);
-
 	console.log('=========================');
 	console.log('Knockout template:');
 	console.log(input);
 	console.log('TAssembly JSON:');
 	console.log(JSON.stringify(c.compile(input), null, 2));
 	console.log('Rendered HTML:');
+	var tpl = ko.compile(input);
 	console.log(tpl(testData));
 }
 

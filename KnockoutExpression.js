@@ -31,6 +31,39 @@ var stringDouble = '"(?:[^"\\\\]|\\\\.)*"',
 	divisionLookBehind = /[\])"'A-Za-z0-9_$]+$/,
 	keywordRegexLookBehind = {'in':1,'return':1,'typeof':1};
 
+
+// Rewrite an expression so that it is referencing the context where necessary
+function prefixModelVars (expr) {
+	// Rewrite the expression to be keyed on the context 'c'
+	// XXX: experiment with some local var definitions and selective
+	// rewriting for perf
+
+	var res = '',
+		i = -1,
+		c = '';
+	do {
+		if (/^$|[\[:(,]/.test(c)) {
+			res += c;
+			if (/[a-zA-Z_]/.test(expr[i+1])) {
+				// Prefix with model reference
+				res += 'm.';
+			}
+		} else if (c === "'") {
+			// skip over string literal
+			var literal = expr.slice(i).match(/'(?:[^\\']+|\\')*'/);
+			if (literal) {
+				res += literal[0];
+				i += literal[0].length - 1;
+			}
+		} else {
+			res += c;
+		}
+		i++;
+		c = expr[i];
+	} while (c);
+	return res;
+}
+
 function parseObjectLiteral(objectLiteralString) {
 	// Trim leading and trailing spaces from the string
 	var str = objectLiteralString.trim();
@@ -65,6 +98,40 @@ function parseObjectLiteral(objectLiteralString) {
 							// Quoted string literal, normalize to single
 							// quote
 							values = "'" + values.slice(1, -1).replace(/'/g, "\\'") + "'";
+						} else if (!/^[a-zA-Z_$]/.test(values)) {
+							// definitely invalid variable: convert to string
+							values = "'" + values.replace(/'/g, "\\'") + "'";
+						} else {
+							// hopefully a valid variable / expression
+							// TODO: properly validate!
+							var ctxMap = {
+								data: 'm',
+								root: 'rm',
+								parent: 'p',
+								parents: 'ps',
+								parentContext: 'pc',
+								index: 'i',
+								context: 'c',
+								rawData: 'd'
+							},
+								ctxKeysRe = new RegExp('\\$('
+											+ Object.keys(ctxMap).join('|')
+											+ ')(?=[^a-zA-Z_$])', 'g');
+							// Prefix all non-dollar vars with d.
+							values = prefixModelVars(values);
+
+							// Now translate all references to special context
+							// variables
+							values = values.replace(ctxKeysRe, function(match) {
+								console.log('match', match);
+								var tassemblyName = ctxMap[match.replace(/^\$/,'')];
+								if (tassemblyName) {
+									return tassemblyName;
+								} else {
+									return match;
+								}
+							});
+
 						}
 
 						if (values) {
