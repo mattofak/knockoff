@@ -5,5 +5,11 @@
 	"dependencies": {
 		"tassembly": "git+https://github.com/gwicke/tassembly.git#master",
 		"domino": "1.x.x"
+	},
+	"devDependencies": {
+		"pegjs": "~0.8.0"
+	},
+	"scripts": {
+		"prepublish": "node makeKnockoutExpressionParser.js"
 	}
 }
