@@ -4,7 +4,7 @@
 "use strict";
 
 var DOMCompiler = require('./DOMCompiler.js'),
-	KnockoutExpression = require('./KnockoutExpression.js'),
+	KnockoutExpressionParser = require('./KnockoutExpressionParser.js'),
 	domino = require('domino');
 
 function handleNode(node, cb, options) {
@@ -15,9 +15,16 @@ function handleNode(node, cb, options) {
 	}
 	// XXX: keep this for client-side re-execution?
 	node.removeAttribute('data-bind');
-	var bindObj = KnockoutExpression.parseObjectLiteral(dataBind),
+	var bindObj,
 		bindOpts, ctlFn, ctlOpts,
 		ret = {};
+	try {
+		bindObj = KnockoutExpressionParser.parse(dataBind);
+	} catch (e) {
+		console.error('Error while compiling ' + JSON.stringify(dataBind) + ':\n' + e);
+		//console.error(e.stack);
+		return {};
+	}
 
 	/*
 	 * attr

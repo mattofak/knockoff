@@ -11,6 +11,29 @@
         '$context': 'c',
         '$rawData': 'd'
     };
+
+    function stringifyObject (obj) {
+        if (obj.constructor === Object) {
+            var res = '{',
+                keys = Object.keys(obj);
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                if (i !== 0) {
+                    res += ',';
+                }
+                if (/^[a-z_$][a-z0-9_$]*$/.test(key)) {
+                    res += key + ':';
+                } else {
+                    res += "'" + key.replace(/'/g, "\\'") + "':";
+                }
+                res += stringifyObject(obj[key]);
+            }
+            res += '}';
+            return res;
+        } else {
+            return obj.toString();
+        }
+    }
 }
 
 start = '{'? spc kvs:key_values spc '}'? { return kvs; }
@@ -18,16 +41,24 @@ start = '{'? spc kvs:key_values spc '}'? { return kvs; }
 key_values = 
     kv:key_value 
     kvs:(spc ',' spc kvv:key_value { return kvv; })* 
-    { return [kv].concat(kvs).join(','); }
+    { 
+        var res = {};
+        [kv].concat(kvs).forEach(function(tuple) {
+            res[tuple[0]] = tuple[1];
+        });
+        return res;
+    }
 
 key_value = 
-    k:(varname / string) 
+    k:(varname 
+            // Unquote string
+            / s:string { return s.slice(1,-1).replace(/\\'/g,"'"); } )
     spc ':' 
     spc v:expression spc 
-    { return k + ':' + v; }
+    { return [k,v]; }
 
 object = '{' spc kvs:key_values spc '}'
-    { return '{' + kvs + '}'; }
+    { return kvs; }
 
 expression = variable / string / number / object
 
@@ -69,21 +100,27 @@ varname = fc:[a-z_$]i cs:$[a-z0-9_$]i*
     { return fc + cs; }
 
 arrayref = '[' spc e:expression spc ']'
-    { return '[' + e + ']'; }
+    { return '[' + stringifyObject(e) + ']'; }
 
-call = '(' spc p:parameters ')'
+call = '(' spc p:parameters spc ')'
     { return '(' + p + ')'; }
 
 parameters = p0:expression? ps:(spc ',' spc pn:expression { return pn; })*
-    { return [p0 || ''].concat(ps).join(','); }
+    {
+        var params = [p0 || ''].concat(ps);
+        params = params.map(function(p) {
+            return stringifyObject(p);
+        });
+        return params.join(','); 
+    }
 
 string = 
   (["] s:$([^"\\]+ / '\\"')* ["] 
     { return "'" + s.replace(/\\"/g, '"').replace(/'/g, "\\'") + "'"; } )
-  / (['] $([^'\\]+ / "\\'")* ['] { return "'" + s + "'" } )
+  / (['] s:$([^'\\]+ / "\\'")* ['] { return "'" + s + "'" } )
 
 number = [0-9]+ ('.' [0-9]+)?
-    { return text(); }
+    { return Number(text()); }
 
 spc = [ \t\n]*
 

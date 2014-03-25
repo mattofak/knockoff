@@ -9,7 +9,4 @@ var PEG = require('pegjs'),
 
 console.log('Re-building KnockoutExpressionParser.js '
 		+ 'from KnockoutExpressionParser.pegjs');
-fs.writeFileSync('KnockoutExpressionParser.js', parser);
-
-//console.log(parser.parse('a: {A: 2,\n b: $parentContext.$data.foo[4].bar({\n"fo\'o":\nbar[3]}) .baz }'));
-
+fs.writeFileSync('KnockoutExpressionParser.js', 'module.exports = ' + parser);
