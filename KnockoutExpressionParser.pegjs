@@ -60,21 +60,17 @@ key_value =
 object = '{' spc kvs:key_values spc '}'
     { return kvs; }
 
-expression = variable / string / number / object
+expression = variable / object / string / number
 
 variable = v:varpart vs:(spc '.' vp:varpart { return vp; })*
     {
         var vars = [v].concat(vs),
             res = vars[0];
         // Rewrite the first path component
-        if (/^\$/.test(res) && ctxMap[res]) {
-            res = ctxMap[res];
-        } else {
-            // local model access
-            res = 'm.' + res;
-        // XXX: be more selective about rewriting $context vars when not in
-        // the first position?
-        }
+        res = res[0] === '$' && ctxMap[res] 
+                // local model access
+                || 'm.' + res;
+
         // remaining path members
         for (var i = 1, l = vars.length; i < l; i++) {
             var v = vars[i];
@@ -94,10 +90,9 @@ variable = v:varpart vs:(spc '.' vp:varpart { return vp; })*
     }
 
 varpart = vn:varname rc:(arrayref / call)? 
-    { var varName = vn + (rc || ''); return ctxMap['$' + varName] || varName; }
+    { return vn + (rc || ''); }
 
-varname = fc:[a-z_$]i cs:$[a-z0-9_$]i*
-    { return fc + cs; }
+varname = $([a-z_$]i [a-z0-9_$]i*)
 
 arrayref = '[' spc e:expression spc ']'
     { return '[' + stringifyObject(e) + ']'; }
