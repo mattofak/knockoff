@@ -1,41 +1,5 @@
 // KnockoutJS expression grammar with rewriting to TAssembly expressions
 
-{
-    var ctxMap = {
-        '$data': 'm',
-        '$root': 'rm',
-        '$parent': 'pm',
-        '$parents': 'pms',
-        '$parentContext': 'pc',
-        '$index': 'i',
-        '$context': 'c',
-        '$rawData': 'd'
-    };
-
-    function stringifyObject (obj) {
-        if (obj.constructor === Object) {
-            var res = '{',
-                keys = Object.keys(obj);
-            for (var i = 0; i < keys.length; i++) {
-                var key = keys[i];
-                if (i !== 0) {
-                    res += ',';
-                }
-                if (/^[a-z_$][a-z0-9_$]*$/.test(key)) {
-                    res += key + ':';
-                } else {
-                    res += "'" + key.replace(/'/g, "\\'") + "':";
-                }
-                res += stringifyObject(obj[key]);
-            }
-            res += '}';
-            return res;
-        } else {
-            return obj.toString();
-        }
-    }
-}
-
 start = '{'? spc kvs:key_values spc '}'? { return kvs; }
 
 key_values = 
@@ -67,7 +31,7 @@ variable = v:varpart vs:(spc '.' vp:varpart { return vp; })*
         var vars = [v].concat(vs),
             res = vars[0];
         // Rewrite the first path component
-        res = res[0] === '$' && ctxMap[res] 
+        res = res[0] === '$' && options.ctxMap[res] 
                 // local model access
                 || 'm.' + res;
 
@@ -80,7 +44,7 @@ variable = v:varpart vs:(spc '.' vp:varpart { return vp; })*
                 ) 
             {
                 // only rewrite if previous path element can be a context
-                res += '.' + (ctxMap[v] || v);
+                res += '.' + (options.ctxMap[v] || v);
             } else {
                 res += '.' + v;
             }
@@ -95,7 +59,7 @@ varpart = vn:varname rc:(arrayref / call)?
 varname = $([a-z_$]i [a-z0-9_$]i*)
 
 arrayref = '[' spc e:expression spc ']'
-    { return '[' + stringifyObject(e) + ']'; }
+    { return '[' + options.stringifyObject(e) + ']'; }
 
 call = '(' spc p:parameters spc ')'
     { return '(' + p + ')'; }
@@ -104,7 +68,7 @@ parameters = p0:expression? ps:(spc ',' spc pn:expression { return pn; })*
     {
         var params = [p0 || ''].concat(ps);
         params = params.map(function(p) {
-            return stringifyObject(p);
+            return options.stringifyObject(p);
         });
         return params.join(','); 
     }

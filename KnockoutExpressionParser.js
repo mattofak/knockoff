@@ -61,7 +61,7 @@ module.exports = (function() {
                 var vars = [v].concat(vs),
                     res = vars[0];
                 // Rewrite the first path component
-                res = res[0] === '$' && ctxMap[res] 
+                res = res[0] === '$' && options.ctxMap[res] 
                         // local model access
                         || 'm.' + res;
 
@@ -74,7 +74,7 @@ module.exports = (function() {
                         ) 
                     {
                         // only rewrite if previous path element can be a context
-                        res += '.' + (ctxMap[v] || v);
+                        res += '.' + (options.ctxMap[v] || v);
                     } else {
                         res += '.' + v;
                     }
@@ -91,7 +91,7 @@ module.exports = (function() {
         peg$c26 = { type: "literal", value: "[", description: "\"[\"" },
         peg$c27 = "]",
         peg$c28 = { type: "literal", value: "]", description: "\"]\"" },
-        peg$c29 = function(e) { return '[' + stringifyObject(e) + ']'; },
+        peg$c29 = function(e) { return '[' + options.stringifyObject(e) + ']'; },
         peg$c30 = "(",
         peg$c31 = { type: "literal", value: "(", description: "\"(\"" },
         peg$c32 = ")",
@@ -101,7 +101,7 @@ module.exports = (function() {
         peg$c36 = function(p0, ps) {
                 var params = [p0 || ''].concat(ps);
                 params = params.map(function(p) {
-                    return stringifyObject(p);
+                    return options.stringifyObject(p);
                 });
                 return params.join(','); 
             },
@@ -1269,42 +1269,6 @@ module.exports = (function() {
 
       return s0;
     }
-
-
-        var ctxMap = {
-            '$data': 'm',
-            '$root': 'rm',
-            '$parent': 'pm',
-            '$parents': 'ps',
-            '$parentContext': 'pc',
-            '$index': 'i',
-            '$context': 'c',
-            '$rawData': 'd'
-        };
-
-        function stringifyObject (obj) {
-            if (obj.constructor === Object) {
-                var res = '{',
-                    keys = Object.keys(obj);
-                for (var i = 0; i < keys.length; i++) {
-                    var key = keys[i];
-                    if (i !== 0) {
-                        res += ',';
-                    }
-                    if (/^[a-z_$][a-z0-9_$]*$/.test(key)) {
-                        res += key + ':';
-                    } else {
-                        res += "'" + key.replace(/'/g, "\\'") + "':";
-                    }
-                    res += stringifyObject(obj[key]);
-                }
-                res += '}';
-                return res;
-            } else {
-                return obj.toString();
-            }
-        }
-
 
     peg$result = peg$startRuleFunction();
 

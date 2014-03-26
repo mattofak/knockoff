@@ -7,6 +7,56 @@ var DOMCompiler = require('./DOMCompiler.js'),
 	KnockoutExpressionParser = require('./KnockoutExpressionParser.js'),
 	domino = require('domino');
 
+
+var ctxMap = {
+	'$data': 'm',
+	'$root': 'rm',
+	'$parent': 'pm',
+	'$parents': 'pms',
+	'$parentContext': 'pc',
+	'$index': 'i',
+	'$context': 'c',
+	'$rawData': 'd'
+};
+
+function stringifyObject (obj) {
+	if (obj.constructor === Object) {
+		var res = '{',
+			keys = Object.keys(obj);
+		for (var i = 0; i < keys.length; i++) {
+			var key = keys[i];
+			if (i !== 0) {
+				res += ',';
+			}
+			if (/^[a-z_$][a-z0-9_$]*$/.test(key)) {
+				res += key + ':';
+			} else {
+				res += "'" + key.replace(/'/g, "\\'") + "':";
+			}
+			res += stringifyObject(obj[key]);
+		}
+		res += '}';
+		return res;
+	} else {
+		return obj.toString();
+	}
+}
+
+function stringifyChildObjects (obj) {
+	for (var key in obj) {
+		var child = obj[key];
+		if (child && child.constructor === Object) {
+			obj[key] = stringifyObject(child);
+		}
+	}
+	return obj;
+}
+
+var parserOptions = {
+	ctxMap: ctxMap,
+	stringifyObject: stringifyObject
+};
+
 function handleNode(node, cb, options) {
 	var dataBind = node.getAttribute('data-bind');
 	if (!dataBind) {
@@ -19,7 +69,7 @@ function handleNode(node, cb, options) {
 		bindOpts, ctlFn, ctlOpts,
 		ret = {};
 	try {
-		bindObj = KnockoutExpressionParser.parse(dataBind);
+		bindObj = KnockoutExpressionParser.parse(dataBind, parserOptions);
 	} catch (e) {
 		console.error('Error while compiling ' + JSON.stringify(dataBind) + ':\n' + e);
 		//console.error(e.stack);
@@ -35,7 +85,7 @@ function handleNode(node, cb, options) {
 			// XXX: don't do destructive updates on the DOM
 			node.removeAttribute(name);
 		});
-		ret.attr = ['attr', bindObj.attr];
+		ret.attr = ['attr', stringifyChildObjects(bindObj.attr)];
 	}
 
 	if (bindObj.visible || bindObj['with']) {
@@ -64,7 +114,7 @@ function handleNode(node, cb, options) {
 	 */
 	if (bindObj.text) {
 		// replace content with text directive
-		ret.content = ['text', bindObj.text];
+		ret.content = ['text', stringifyObject(bindObj.text)];
 		return ret;
 	}
 
@@ -79,7 +129,7 @@ function handleNode(node, cb, options) {
 		var trigger = templateTriggers[i];
 		if (trigger in bindOpts) {
 			ctlFn = trigger;
-			ctlOpts.data = bindOpts[ctlFn] || bindOpts.data;
+			ctlOpts.data = stringifyObject(bindOpts[ctlFn] || bindOpts.data);
 			if (trigger === 'foreach' && bindOpts.as) {
 				ctlOpts.as = bindOpts.as + '';
 			}
@@ -96,7 +146,7 @@ function handleNode(node, cb, options) {
 
 	// Simple template without foreach / with / if / ifnot
 	if (bindObj.template) {
-		ctlOpts.data = bindOpts.data;
+		ctlOpts.data = stringifyObject(bindOpts.data);
 		if (!bindOpts.name) {
 			ctlOpts.tpl = new DOMCompiler().compile(node, options);
 		} else {
