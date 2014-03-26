@@ -4,7 +4,7 @@
     var ctxMap = {
         '$data': 'm',
         '$root': 'rm',
-        '$parent': 'p',
+        '$parent': 'pm',
         '$parents': 'ps',
         '$parentContext': 'pc',
         '$index': 'i',

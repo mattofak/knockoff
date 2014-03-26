@@ -83,10 +83,10 @@ module.exports = (function() {
                 return res; 
             },
         peg$c20 = function(vn, rc) { return vn + (rc || ''); },
-        peg$c21 = /^[a-zA-Z_$]/,
-        peg$c22 = { type: "class", value: "[a-zA-Z_$]", description: "[a-zA-Z_$]" },
-        peg$c23 = /^[a-zA-Z0-9_$]/,
-        peg$c24 = { type: "class", value: "[a-zA-Z0-9_$]", description: "[a-zA-Z0-9_$]" },
+        peg$c21 = /^[a-z_$]/i,
+        peg$c22 = { type: "class", value: "[a-z_$]i", description: "[a-z_$]i" },
+        peg$c23 = /^[a-z0-9_$]/i,
+        peg$c24 = { type: "class", value: "[a-z0-9_$]i", description: "[a-z0-9_$]i" },
         peg$c25 = "[",
         peg$c26 = { type: "literal", value: "[", description: "\"[\"" },
         peg$c27 = "]",
@@ -1274,7 +1274,7 @@ module.exports = (function() {
         var ctxMap = {
             '$data': 'm',
             '$root': 'rm',
-            '$parent': 'p',
+            '$parent': 'pm',
             '$parents': 'ps',
             '$parentContext': 'pc',
             '$index': 'i',
