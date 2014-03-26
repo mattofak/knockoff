@@ -5,7 +5,7 @@
         '$data': 'm',
         '$root': 'rm',
         '$parent': 'pm',
-        '$parents': 'ps',
+        '$parents': 'pms',
         '$parentContext': 'pc',
         '$index': 'i',
         '$context': 'c',
