@@ -5,7 +5,7 @@
 var PEG = require('pegjs'),
 	fs = require('fs'),
 	grammar = fs.readFileSync('./KnockoutExpressionParser.pegjs', 'utf8'),
-	parser = PEG.buildParser(grammar, {output:"source"});
+	parser = PEG.buildParser(grammar, {output:"source", optimize:"size"});
 
 console.log('Re-building KnockoutExpressionParser.js '
 		+ 'from KnockoutExpressionParser.pegjs');
