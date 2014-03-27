@@ -31,9 +31,21 @@ variable = v:varpart vs:(spc '.' vp:varpart { return vp; })*
         var vars = [v].concat(vs),
             res = vars[0];
         // Rewrite the first path component
-        res = res[0] === '$' && options.ctxMap[res] 
+        if (res[0] === '$') {
+            if (options.ctxMap[res]) {
+                // Built-in context var access
+                res = options.ctxMap[res];
+            } else if (/^\$\./.test(res)) {
+                // user-defined global context access
+                res = 'rc.g.' + res;
+            } else {
                 // local model access
-                || 'm.' + res;
+                res = 'm.' + res;
+            }
+        } else {
+            // local model access
+            res = 'm.' + res;
+        }
 
         // remaining path members
         for (var i = 1, l = vars.length; i < l; i++) {
@@ -53,8 +65,8 @@ variable = v:varpart vs:(spc '.' vp:varpart { return vp; })*
         return res; 
     }
 
-varpart = vn:varname rc:(arrayref / call)? 
-    { return vn + (rc || ''); }
+varpart = vn:varname r:arrayref? c:call? 
+    { return vn + (r || '') + (c || ''); }
 
 varname = $([a-z_$]i [a-z0-9_$]i*)
 

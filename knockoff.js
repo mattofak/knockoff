@@ -16,7 +16,7 @@ function KnockOff () {
  */
 KnockOff.prototype.compile = function(template, options) {
 	var templateASM = koCompiler.compile(template, options);
-	return this.TA.compile(templateASM, options && options.cb);
+	return this.TA.compile(templateASM, options);
 };
 
 /**

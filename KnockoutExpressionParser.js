@@ -61,9 +61,21 @@ module.exports = (function() {
                 var vars = [v].concat(vs),
                     res = vars[0];
                 // Rewrite the first path component
-                res = res[0] === '$' && options.ctxMap[res] 
+                if (res[0] === '$') {
+                    if (options.ctxMap[res]) {
+                        // Built-in context var access
+                        res = options.ctxMap[res];
+                    } else if (/^\$\./.test(res)) {
+                        // user-defined global context access
+                        res = 'rc.g.' + res;
+                    } else {
                         // local model access
-                        || 'm.' + res;
+                        res = 'm.' + res;
+                    }
+                } else {
+                    // local model access
+                    res = 'm.' + res;
+                }
 
                 // remaining path members
                 for (var i = 1, l = vars.length; i < l; i++) {
@@ -82,7 +94,7 @@ module.exports = (function() {
 
                 return res; 
             },
-        peg$c20 = function(vn, rc) { return vn + (rc || ''); },
+        peg$c20 = function(vn, r, c) { return vn + (r || '') + (c || ''); },
         peg$c21 = /^[a-z_$]/i,
         peg$c22 = { type: "class", value: "[a-z_$]i", description: "[a-z_$]i" },
         peg$c23 = /^[a-z0-9_$]/i,
@@ -659,22 +671,28 @@ module.exports = (function() {
     }
 
     function peg$parsevarpart() {
-      var s0, s1, s2;
+      var s0, s1, s2, s3;
 
       s0 = peg$currPos;
       s1 = peg$parsevarname();
       if (s1 !== peg$FAILED) {
         s2 = peg$parsearrayref();
         if (s2 === peg$FAILED) {
-          s2 = peg$parsecall();
-        }
-        if (s2 === peg$FAILED) {
           s2 = peg$c1;
         }
         if (s2 !== peg$FAILED) {
-          peg$reportedPos = s0;
-          s1 = peg$c20(s1, s2);
-          s0 = s1;
+          s3 = peg$parsecall();
+          if (s3 === peg$FAILED) {
+            s3 = peg$c1;
+          }
+          if (s3 !== peg$FAILED) {
+            peg$reportedPos = s0;
+            s1 = peg$c20(s1, s2, s3);
+            s0 = s1;
+          } else {
+            peg$currPos = s0;
+            s0 = peg$c0;
+          }
         } else {
           peg$currPos = s0;
           s0 = peg$c0;
