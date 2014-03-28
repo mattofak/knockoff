@@ -6,7 +6,7 @@ use Exception;
  *
  * @file
  * @ingroup Extensions
- * @copyright 2011-2013; see AUTHORS.txt
+ * @copyright 2013; see AUTHORS.txt
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
@@ -14,16 +14,21 @@ class TAssembly {
 	/**
 	 * Render an intermediate representation object into HTML
 	 *
-	 * @param IrObject $ir
+	 * @param string[] $ir
 	 * @param string[] $model
+	 * @param TAssemblyOptions $options
 	 *
 	 * @throws TAssemblyException if a subpart is not a 2-tuple, or if a control function is not known
 	 *
 	 * @return string HTML
 	 */
-	public static function render( array $ir, $model = array() ) {
+	public static function render( array $ir, array $model = array(), TAssemblyOptions $options = null ) {
+		$context = TAssemblyContext::createRootContextFromModel( $model, $options );
+		return TAssembly::render_context( $ir, $context );
+	}
+
+	protected static function render_context( array $ir, TAssemblyContext $context ) {
 		$bits = array();
-		$context = TAssemblyContext::createRootContextFromModel( $model, array() );
 
 		foreach( $ir as $bit ) {
 			if ( is_string( $bit ) ) {
@@ -37,54 +42,34 @@ class TAssembly {
 						$val = '';
 					}
 					$bits[] = htmlspecialchars( $val, ENT_XML1 );
-				} elseif ( method_exists( 'TAssembly', 'ctlFn_' . $ctlFn ) ) {
-					$fnName = 'ctlFn_' . $ctlFn;
-					$bits[] = TAssembly::$fnName( $ctlOpts, $context );
+				} elseif ( array_key_exists( $ctlFn, $context->f ) ) {
+					$bits[] = $context->f[$ctlFn]( $ctlOpts, $context );
+				} else {
+					throw new TAssemblyException( "Function '$ctlFn' does not exist in the context.", $bit );
 				}
 			} else {
-				throw new TAssemblyException( 'Unsupported operation on sub template', $bit );
+				throw new TAssemblyException( 'Template operation must be either string or 2-tuple (function, args)', $bit );
 			}
 		}
 
 		return join('', $bits);
 	}
 
-	private static function evaluate_expression( $expr, TAssemblyContext $context ) {
-		/*
-		 * var func = this.cache['expr' + expression];
-	if (!func) {
-
-		var simpleMatch = expression.match(simpleBindingVar);
-		if (simpleMatch) {
-			var ctxMember = simpleMatch[1],
-				key = simpleMatch[2];
-			return ctx[ctxMember][key];
-		}
-
-		// String literal
-		if (/^'.*'$/.test(expression)) {
-			return expression.slice(1,-1).replace(/\\'/g, "'");
-		}
-
-		func = new Function('c', 'var m = c.m;'
-				+ 'return ' + rewriteExpression(expression));
-		this.cache['expr' + expression] = func;
-	}
-	if (func) {
-		try {
-			return func(ctx);
-		}  catch (e) {
-			console.log(e);
-			return '';
-		}
-	}
-		 */
-
+	/**
+	 * Evaluate a simple expression.
+	 *
+	 * Note: This uses php eval(); we are relying on the compiler to
+	 * make sure nothing dangerous is passed in.
+	 *
+	 * @param $expr
+	 * @param TAssemblyContext $context
+	 * @return mixed|string
+	 */
+	protected static function evaluate_expression( $expr, TAssemblyContext $context ) {
 		// Simple variable
 		$matches = array();
 		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)\.([a-zA-Z_$]+)$/', $expr, $matches ) ) {
 			list( $x, $member, $key ) = $matches;
-			if ( $member == 'i' ) { throw new \Exception('Need to implement iterators!'); }
 			return ( array_key_exists( $key, $context[$member] ) ? $context[$member][$key] : $expr );
 		}
 
@@ -93,26 +78,64 @@ class TAssembly {
 			return str_replace( '\\\'', '\'', substr( $expr, 1, -1 ) );
 		}
 
-		// Object dot notation
-		if ( preg_match( '/^[a-zA-Z_]+[.a-zA-Z_]+$/', $expr ) ) {
-			$path = explode( '.', $expr );
-			$ls = $context;
-			foreach( $path as $key ) {
-				if ( array_key_exists( $key, $ls ) ) {
-					$ls = $ls[$key];
-				}
-			}
-			if ( count( $path ) && $ls !== $context ) {
-				return strval( $ls );
-			} else {
-				return $expr;
-			}
-		}
+		// Hopefully simple expression; which must be rewritten to use PHP style accessors
+
 
 		// Otherwise just return the expression. At some point we may allow more
 		// complicated things (like function calls... but not now).
 		return $expr;
 	}
+
+	/**
+	 * Rewrite a simple expression to be keyed on the context
+	 *
+	 * Allow objects { foo: 'basf' }
+	 *
+	 */
+	protected static function rewriteExpression( $expr ) {
+		$result = '';
+		$i = -1;
+		$c = '';
+
+		do {
+			if ( preg_match( '/^$|[\[:(]/', $c ) ) {
+				// Match the empty string, or one of [, :, (
+				$result .= $c;
+				if (
+					preg_match( '/[pri]/', $expr[$i+1] )
+					&& preg_match( '/(?:p[cm]s?|rm|i)(?:[\.\)\]}]|$)/', substr( $expr, $i+1 ) )
+				) {
+					// This is an expression referencing the parent, root, or iteration scopes
+					$result .= '$context->';
+				}
+
+			} elseif ( $c === "'") {
+				// String literal, just skip over it and add it
+				$match = array();
+				preg_match( "/'(?:[^\\']+|\\')*'/", substr( $expr, $i ), $match );
+				if ( !empty( $match ) ) {
+					$result .= $match[0];
+					$i += strlen( $match[0] );
+				} else {
+					throw new TAssemblyException( "Caught truncated string!", $expr );
+				}
+
+			} elseif ( $c === "{" ) {
+				$result .= 'array(';
+
+			} elseif ( $c === "}" ) {
+				$result .= ')';
+			}
+
+			$i++;
+			$c = $expr[$i];
+		} while ( $c );
+	}
+}
+
+class TAssemblyOptions {
+	public $partials = array();
+	public $functions = array();
 }
 
 class TAssemblyException extends \Exception {
@@ -143,16 +166,23 @@ class TAssemblyContext implements \ArrayAccess {
 	/** @var string[] Model for the current context (holds locals) */
 	public $m;
 
-	/** @var array() Reference to the global object for function calls */
+	/** @var TAssemblyOptions Reference to the global object for function calls */
 	public $g;
 
-	public static function createRootContextFromModel( $model, $globals ) {
+	/** @var array() Array of functions (accessible only from the root object) */
+	public $f;
+
+	/** @var ??? uhh... this is an iterator... not yet gotten there */
+	public $i;
+
+	public static function createRootContextFromModel( $model, TAssemblyOptions $options ) {
 		$ctx = new TAssemblyContext();
 		$ctx->rm = $model;
 		$ctx->m = &$ctx->rm;
 		$ctx->pms = array();
 		$ctx->pcs = array();
-		$ctx->g = &$globals;
+		$ctx->g = $options;
+		$ctx->f = &$ctx->g->functions;
 
 		return $ctx;
 	}
@@ -179,77 +209,5 @@ class TAssemblyContext implements \ArrayAccess {
 
 	protected function __construct() {
 		// Just making sure we can only use generators to construct this object
-	}
-}
-
-/**
- * Class IrObject
- * @package Stencil
- */
-class IrObject implements \Iterator, \JsonSerializable {
-	/**
-	 * (PHP 5 &gt;= 5.0.0)<br/>
-	 * Return the current element
-	 * @link http://php.net/manual/en/iterator.current.php
-	 * @return mixed Can return any type.
-	 */
-	public function current() {
-		// TODO: Implement current() method.
-	}
-
-	/**
-	 * (PHP 5 &gt;= 5.0.0)<br/>
-	 * Move forward to next element
-	 * @link http://php.net/manual/en/iterator.next.php
-	 * @return void Any returned value is ignored.
-	 */
-	public function next() {
-		// TODO: Implement next() method.
-	}
-
-	/**
-	 * (PHP 5 &gt;= 5.0.0)<br/>
-	 * Return the key of the current element
-	 * @link http://php.net/manual/en/iterator.key.php
-	 * @return mixed scalar on success, or null on failure.
-	 */
-	public function key() {
-		// TODO: Implement key() method.
-	}
-
-	/**
-	 * (PHP 5 &gt;= 5.0.0)<br/>
-	 * Checks if current position is valid
-	 * @link http://php.net/manual/en/iterator.valid.php
-	 * @return boolean The return value will be casted to boolean and then evaluated.
-	 * Returns true on success or false on failure.
-	 */
-	public function valid() {
-		// TODO: Implement valid() method.
-	}
-
-	/**
-	 * (PHP 5 &gt;= 5.0.0)<br/>
-	 * Rewind the Iterator to the first element
-	 * @link http://php.net/manual/en/iterator.rewind.php
-	 * @return void Any returned value is ignored.
-	 */
-	public function rewind() {
-		// TODO: Implement rewind() method.
-	}
-
-	function __wakeup() {
-		// TODO: Implement __wakeup() method.
-	}
-
-	/**
-	 * (PHP 5 &gt;= 5.4.0)<br/>
-	 * Specify data which should be serialized to JSON
-	 * @link http://php.net/manual/en/jsonserializable.jsonserialize.php
-	 * @return mixed data which can be serialized by <b>json_encode</b>,
-	 * which is a value of any type other than a resource.
-	 */
-	public function jsonSerialize() {
-		// TODO: Implement jsonSerialize() method.
 	}
 }
