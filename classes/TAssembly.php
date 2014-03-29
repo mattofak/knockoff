@@ -23,6 +23,9 @@ class TAssembly {
 	 * @return string HTML
 	 */
 	public static function render( array $ir, array $model = array(), TAssemblyOptions $options = null ) {
+		if ( $options == null ) {
+			$options = new TAssemblyOptions();
+		}
 		$context = TAssemblyContext::createRootContextFromModel( $model, $options );
 		return TAssembly::render_context( $ir, $context );
 	}
@@ -70,7 +73,11 @@ class TAssembly {
 		$matches = array();
 		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)\.([a-zA-Z_$]+)$/', $expr, $matches ) ) {
 			list( $x, $member, $key ) = $matches;
-			return ( array_key_exists( $key, $context[$member] ) ? $context[$member][$key] : $expr );
+			if ( $key && is_array( $context[$member] ) ) {
+				return ( array_key_exists( $key, $context[$member] ) ? $context[$member][$key] : '' );
+			} else {
+				return $context[$member] || '';
+			}
 		}
 
 		// String literal
@@ -83,7 +90,10 @@ class TAssembly {
 
 		// Otherwise just return the expression. At some point we may allow more
 		// complicated things (like function calls... but not now).
-		return $expr;
+		$newExpr = self::rewriteExpression( $expr );
+		//echo $newExpr . "\n";
+		$model = $context['m'];
+		return eval('return ' . $newExpr . ';');
 	}
 
 	/**
@@ -96,17 +106,29 @@ class TAssembly {
 		$result = '';
 		$i = -1;
 		$c = '';
+		$len = strlen( $expr );
+		$inArray = false;
 
 		do {
 			if ( preg_match( '/^$|[\[:(]/', $c ) ) {
 				// Match the empty string, or one of [, :, (
+				if ($inArray) {
+					$result .= "']";
+				}
 				$result .= $c;
-				if (
-					preg_match( '/[pri]/', $expr[$i+1] )
-					&& preg_match( '/(?:p[cm]s?|rm|i)(?:[\.\)\]}]|$)/', substr( $expr, $i+1 ) )
-				) {
+				$remainingExpr = substr( $expr, $i+1 );
+				if ( preg_match( '/[pri]/', $expr[$i+1] )
+					&& preg_match( '/(?:p[cm]s?|rm|i)(?:[\.\)\]}]|$)/', $remainingExpr ) )
+				{
 					// This is an expression referencing the parent, root, or iteration scopes
-					$result .= '$context->';
+					$result .= "\$context['";
+					$inArray = true;
+				} else if ( preg_match( '/^m./', $remainingExpr ) ) {
+					$result .= "\$model['";
+					$i += 2;
+					$inArray = true;
+				} else if ( $c === ':' ) {
+					$result .= '=>';
 				}
 
 			} elseif ( $c === "'") {
@@ -125,11 +147,23 @@ class TAssembly {
 
 			} elseif ( $c === "}" ) {
 				$result .= ')';
+			} elseif ( $c === "." ) {
+				if ( $inArray ) {
+					$result .= "']['";
+				} else {
+					$inArray = true;
+					$result .= "['";
+				}
+			} else {
+				$result .= $c;
 			}
 
 			$i++;
-			$c = $expr[$i];
-		} while ( $c );
+		} while ( $i < $len && $c = $expr[$i] );
+		if ($inArray) {
+			$result .= "']";
+		}
+		return $result;
 	}
 }
 
