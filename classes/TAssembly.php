@@ -45,6 +45,8 @@ class TAssembly {
 						$val = '';
 					}
 					$bits[] = htmlspecialchars( $val, ENT_XML1 );
+				} elseif ( is_callable( 'self::ctlFn_' . $ctlFn ) ) {
+					$bits[] = call_user_func( 'self::ctlFn_' . $ctlFn, $ctlOpts, $context );
 				} elseif ( array_key_exists( $ctlFn, $context->f ) ) {
 					$bits[] = $context->f[$ctlFn]( $ctlOpts, $context );
 				} else {
