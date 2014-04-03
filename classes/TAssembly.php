@@ -92,7 +92,7 @@ class TAssembly {
 
 		// More complex expression which must be rewritten to use PHP style accessors
 		$newExpr = self::rewriteExpression( $expr );
-		echo $newExpr . "\n";
+		//echo $newExpr . "\n";
 		$model = $context['m'];
 		return eval('return ' . $newExpr . ';');
 	}
@@ -119,7 +119,9 @@ class TAssembly {
 					$result .= "']";
 					$inArray = false;
 				}
-				$result .= $c;
+				if ($c != ':') {
+					$result .= $c;
+				}
 				$remainingExpr = substr( $expr, $i+1 );
 				if ( preg_match( '/[pri]/', $expr[$i+1] )
 					&& preg_match( '/(?:p[cm]s?|rm|i)(?:[\.\)\]}]|$)/', $remainingExpr ) )
@@ -136,23 +138,38 @@ class TAssembly {
 						$result .= '$model';
 						$i++;
 					}
-				} else if ( $c === ':' ) {
+				} else if ( $c == ':' ) {
 					$result .= '=>';
+				} else if ( preg_match('/^([a-zA-Z_$][a-zA-Z0-9_$]*):/',
+								$remainingExpr, $match) )
+				{
+					// unquoted object key
+					$result .= "'" . $match[1] . "'";
+					$i += strlen($match[1]) + 2;
 				}
+
 
 			} elseif ( $c === "'") {
 				// String literal, just skip over it and add it
 				$match = array();
-				preg_match( "/'(?:[^\\']+|\\')*'/", substr( $expr, $i ), $match );
+				preg_match( '/^(?:[^\\\']+|\\\')*\'/', substr( $expr, $i + 1 ), $match );
 				if ( !empty( $match ) ) {
-					$result .= $match[0];
+					$result .= $c . $match[0];
 					$i += strlen( $match[0] );
 				} else {
-					throw new TAssemblyException( "Caught truncated string!", $expr );
+					throw new TAssemblyException( "Caught truncated string!" . $expr );
 				}
 			} elseif ( $c === "{" ) {
 				// Object
 				$result .= 'Array(';
+
+				if ( preg_match('/^([a-zA-Z_$][a-zA-Z0-9_$]*):/',
+					substr( $expr, $i+1 ), $match) )
+				{
+					// unquoted object key
+					$result .= "'" . $match[1] . "'";
+					$i += strlen($match[1]);
+				}
 
 			} elseif ( $c === "}" ) {
 				// End of object
