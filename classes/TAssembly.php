@@ -77,7 +77,8 @@ class TAssembly {
 			list( $x, $member ) = $matches;
 			$key = count($matches) == 4 ? $matches[3] : false;
 			if ( $key && is_array( $context[$member] ) ) {
-				return ( array_key_exists( $key, $context[$member] ) ? $context[$member][$key] : '' );
+				return ( array_key_exists( $key, $context[$member] ) ?
+					$context[$member][$key] : '' );
 			} else {
 				$res = $context[$member];
 				return $res ? $res : '';
