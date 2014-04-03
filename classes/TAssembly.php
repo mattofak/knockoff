@@ -45,6 +45,8 @@ class TAssembly {
 						$val = '';
 					}
 					$bits[] = htmlspecialchars( $val, ENT_XML1 );
+				} elseif ( is_callable( 'self::ctlFn_' . $ctlFn ) ) {
+					$bits[] = call_user_func( 'self::ctlFn_' . $ctlFn, $ctlOpts, $context );
 				} elseif ( array_key_exists( $ctlFn, $context->f ) ) {
 					$bits[] = $context->f[$ctlFn]( $ctlOpts, $context );
 				} else {
@@ -71,12 +73,14 @@ class TAssembly {
 	protected static function evaluate_expression( $expr, TAssemblyContext $context ) {
 		// Simple variable
 		$matches = array();
-		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)\.([a-zA-Z_$]+)$/', $expr, $matches ) ) {
-			list( $x, $member, $key ) = $matches;
+		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)(?:\.([a-zA-Z_$]+))?$/', $expr, $matches ) ) {
+			list( $x, $member ) = $matches;
+			$key = count($matches) == 4 ? $matches[3] : false;
 			if ( $key && is_array( $context[$member] ) ) {
 				return ( array_key_exists( $key, $context[$member] ) ? $context[$member][$key] : '' );
 			} else {
-				return $context[$member] || '';
+				$res = $context[$member];
+				return $res ? $res : '';
 			}
 		}
 
@@ -85,11 +89,7 @@ class TAssembly {
 			return str_replace( '\\\'', '\'', substr( $expr, 1, -1 ) );
 		}
 
-		// Hopefully simple expression; which must be rewritten to use PHP style accessors
-
-
-		// Otherwise just return the expression. At some point we may allow more
-		// complicated things (like function calls... but not now).
+		// More complex expression which must be rewritten to use PHP style accessors
 		$newExpr = self::rewriteExpression( $expr );
 		//echo $newExpr . "\n";
 		$model = $context['m'];
@@ -99,8 +99,9 @@ class TAssembly {
 	/**
 	 * Rewrite a simple expression to be keyed on the context
 	 *
-	 * Allow objects { foo: 'basf' }
+	 * Allow objects { foo: 'basf', bar: contextVar.arr[5] }
 	 *
+	 * TODO: error checking for member access
 	 */
 	protected static function rewriteExpression( $expr ) {
 		$result = '';
@@ -111,9 +112,11 @@ class TAssembly {
 
 		do {
 			if ( preg_match( '/^$|[\[:(]/', $c ) ) {
-				// Match the empty string, or one of [, :, (
-				if ($inArray) {
+				// Match the empty string (start of expression), or one of [, :, (
+				if ( $inArray ) {
+					// close the array reference
 					$result .= "']";
+					$inArray = false;
 				}
 				$result .= $c;
 				$remainingExpr = substr( $expr, $i+1 );
@@ -141,11 +144,12 @@ class TAssembly {
 				} else {
 					throw new TAssemblyException( "Caught truncated string!", $expr );
 				}
-
 			} elseif ( $c === "{" ) {
-				$result .= 'array(';
+				// Object
+				$result .= 'Array(';
 
 			} elseif ( $c === "}" ) {
+				// End of object
 				$result .= ')';
 			} elseif ( $c === "." ) {
 				if ( $inArray ) {
@@ -155,21 +159,42 @@ class TAssembly {
 					$result .= "['";
 				}
 			} else {
+				// Anything else is sane as it conforms to the quite
+				// restricted TAssembly spec, just pass it through
 				$result .= $c;
 			}
 
 			$i++;
 		} while ( $i < $len && $c = $expr[$i] );
 		if ($inArray) {
+			// close an open array reference
 			$result .= "']";
 		}
 		return $result;
 	}
+
+	protected function ctlFn_foreach ($opts, $ctx) {
+		$iterable = self::evaluate_expression($opts['data'], $ctx);
+		if (!is_array($iterable)) {
+			return '';
+		}
+		$bits = [];
+		$newCtx = $ctx->createChildCtx(null);
+		$len = count($iterable);
+		for ($i = 0; $i < $len; $i++) {
+			$newCtx->m = $iterable[$i];
+			$newCtx->pms[0] = $iterable[$i];
+			$newCtx->i = $i;
+			$bits[] = self::render_context($opts['tpl'], $newCtx);
+		}
+		return join('', $bits);
+	}
+
 }
 
 class TAssemblyOptions {
 	public $partials = array();
-	public $functions = array();
+	public $globals = array();
 }
 
 class TAssemblyException extends \Exception {
@@ -215,9 +240,23 @@ class TAssemblyContext implements \ArrayAccess {
 		$ctx->m = &$ctx->rm;
 		$ctx->pms = array();
 		$ctx->pcs = array();
-		$ctx->g = $options;
-		$ctx->f = &$ctx->g->functions;
+		$ctx->g = $options->globals;
+		$ctx->options = $options->globals;
+		$ctx->f = array(); //&$ctx->g->functions;
+		$ctx->rc = &$ctx;
 
+		return $ctx;
+	}
+
+	public function createChildCtx ( $model ) {
+		$ctx = new TAssemblyContext();
+		$ctx->m = $model;
+		$ctx->pc = $this;
+		$ctx->pm = $this->m;
+		$ctx->pms = array_merge(Array($model), $this->pms);
+		$ctx->rm = $this->rm;
+		$ctx->rc = $this->rc;
+		$ctx->pcs = array_merge(Array($ctx), $this->pcs);
 		return $ctx;
 	}
 
