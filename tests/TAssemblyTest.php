@@ -4,7 +4,7 @@ namespace TAssembly;
 /**
  * @group Extensions/Knockoff
  */
-class TAssemblyTest extends \MediaWikiTestCase {
+class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 	/** @var TAssembly */
 	protected $ta;
 
