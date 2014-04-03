@@ -92,7 +92,7 @@ class TAssembly {
 
 		// More complex expression which must be rewritten to use PHP style accessors
 		$newExpr = self::rewriteExpression( $expr );
-		//echo $newExpr . "\n";
+		echo $newExpr . "\n";
 		$model = $context['m'];
 		return eval('return ' . $newExpr . ';');
 	}
@@ -127,10 +127,15 @@ class TAssembly {
 					// This is an expression referencing the parent, root, or iteration scopes
 					$result .= "\$context['";
 					$inArray = true;
-				} else if ( preg_match( '/^m./', $remainingExpr ) ) {
-					$result .= "\$model['";
-					$i += 2;
-					$inArray = true;
+				} else if ( preg_match( '/^m(\.)?/', $remainingExpr, $matches ) ) {
+					if ($matches[1]) {
+						$result .= "\$model['";
+						$i += 2;
+						$inArray = true;
+					} else {
+						$result .= '$model';
+						$i++;
+					}
 				} else if ( $c === ':' ) {
 					$result .= '=>';
 				}
@@ -179,7 +184,7 @@ class TAssembly {
 			return $tpl;
 		} else {
 			// String literal: strip quotes
-			$tpl = preg_replace("^'(.*)'$", '$1', $tpl);
+			$tpl = preg_replace('/^\'(.*)\'$/', '$1', $tpl);
 			return $ctx->rc->options->partials[$tpl];
 		}
 	}
@@ -234,7 +239,7 @@ class TAssembly {
 	protected static function ctlFn_attr ($opts, $ctx) {
 		foreach($opts as $name => $val) {
 			if (is_string($val)) {
-				$val = self::evaluate_expression($val, $ctx);
+				$attVal = self::evaluate_expression($val, $ctx);
 			} else {
 				// must be an object
 				$attVal = $val['v'] ? $val['v'] : '';
@@ -250,23 +255,23 @@ class TAssembly {
 						}
 					}
 				}
-				if (!$attVal && $val['v'] == null) {
-					$attVal = null;
+			}
+			if (!$attVal && $val['v'] == null) {
+				$attVal = null;
+			}
+			/*
+			 * TODO: hook up sanitization to MW sanitizer via options?
+			if ($attVal != null) {
+				if ($name == 'href' || $name == 'src') {
+					$attVal = self::sanitizeHref($attVal);
+				} else if ($name == 'style') {
+					$attVal = self::sanitizeStyle($attVal);
 				}
-				/*
-				 * TODO: hook up sanitization to MW sanitizer via options?
-				if ($attVal != null) {
-					if ($name == 'href' || $name == 'src') {
-						$attVal = self::sanitizeHref($attVal);
-					} else if ($name == 'style') {
-						$attVal = self::sanitizeStyle($attVal);
-					}
-				}
-				 */
-				if ($attVal != null) {
-					return ' ' . $name . '="' .
-						htmlspecialchars( $attVal, ENT_XML1 | ENT_COMPAT ) . '"';
-				}
+			}
+			 */
+			if ($attVal != null) {
+				return ' ' . $name . '="' .
+					htmlspecialchars( $attVal, ENT_XML1 | ENT_COMPAT ) . '"';
 			}
 		}
 	}
@@ -321,7 +326,7 @@ class TAssemblyContext implements \ArrayAccess {
 		$ctx->pms = array();
 		$ctx->pcs = array();
 		$ctx->g = $options->globals;
-		$ctx->options = $options->globals;
+		$ctx->options = $options;
 		$ctx->f = array(); //&$ctx->g->functions;
 		$ctx->rc = &$ctx;
 
