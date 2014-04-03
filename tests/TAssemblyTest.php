@@ -20,29 +20,29 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @dataProvider renderProvider
 	 */
-	public function testRender( $file ) {
-		$testObj = json_decode( file_get_contents( $file ), true );
-
-		$options = new TAssemblyOptions();
-		$options->partials = &$testObj['partials'];
-
-		$model = &$testObj['model'];
-
-		foreach ( $testObj['tests'] as $test ) {
-			$result = $this->ta->render(
-				$test['tassembly'],
-				$model,
-				$options
-			);
-			$this->assertEquals( $test['result'], $result );
-		}
+	public function testRender( $tassembly, $model, TAssemblyOptions $options, $expectation ) {
+		$result = $this->ta->render(
+			$tassembly,
+			$model,
+			$options
+		);
+		$this->assertEquals( $expectation, $result );
 	}
 
 	public function renderProvider() {
+		$tests = array();
 		$files = glob( __DIR__ . '/vectors/TAssembly.*.json' );
-		foreach ( $files as &$file ) {
-			$file = array( $file );
+		foreach ( $files as $file ) {
+			$testObj = json_decode( file_get_contents( $file ), true );
+			$options = new TAssemblyOptions();
+			$options->partials = $testObj['partials'];
+			$model = $testObj['model'];
+
+			foreach ( $testObj['tests'] as &$test ) {
+				$tests[] = array( $test['tassembly'], $model, $options, $test['result'] );
+			}
+
 		}
-		return $files;
+		return $tests;
 	}
 }
