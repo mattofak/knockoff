@@ -73,12 +73,14 @@ class TAssembly {
 	protected static function evaluate_expression( $expr, TAssemblyContext $context ) {
 		// Simple variable
 		$matches = array();
-		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)\.([a-zA-Z_$]+)$/', $expr, $matches ) ) {
-			list( $x, $member, $key ) = $matches;
+		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)(?:\.([a-zA-Z_$]+))?$/', $expr, $matches ) ) {
+			list( $x, $member ) = $matches;
+			$key = count($matches) == 4 ? $matches[3] : false;
 			if ( $key && is_array( $context[$member] ) ) {
 				return ( array_key_exists( $key, $context[$member] ) ? $context[$member][$key] : '' );
 			} else {
-				return $context[$member] || '';
+				$res = $context[$member];
+				return $res ? $res : '';
 			}
 		}
 
@@ -170,11 +172,29 @@ class TAssembly {
 		}
 		return $result;
 	}
+
+	protected function ctlFn_foreach ($opts, $ctx) {
+		$iterable = self::evaluate_expression($opts['data'], $ctx);
+		if (!is_array($iterable)) {
+			return '';
+		}
+		$bits = [];
+		$newCtx = $ctx->createChildCtx(null);
+		$len = count($iterable);
+		for ($i = 0; $i < $len; $i++) {
+			$newCtx->m = $iterable[$i];
+			$newCtx->pms[0] = $iterable[$i];
+			$newCtx->i = $i;
+			$bits[] = self::render_context($opts['tpl'], $newCtx);
+		}
+		return join('', $bits);
+	}
+
 }
 
 class TAssemblyOptions {
 	public $partials = array();
-	public $functions = array();
+	public $globals = array();
 }
 
 class TAssemblyException extends \Exception {
@@ -220,9 +240,23 @@ class TAssemblyContext implements \ArrayAccess {
 		$ctx->m = &$ctx->rm;
 		$ctx->pms = array();
 		$ctx->pcs = array();
-		$ctx->g = $options;
-		$ctx->f = &$ctx->g->functions;
+		$ctx->g = $options->globals;
+		$ctx->options = $options->globals;
+		$ctx->f = array(); //&$ctx->g->functions;
+		$ctx->rc = &$ctx;
 
+		return $ctx;
+	}
+
+	public function createChildCtx ( $model ) {
+		$ctx = new TAssemblyContext();
+		$ctx->m = $model;
+		$ctx->pc = $this;
+		$ctx->pm = $this->m;
+		$ctx->pms = array_merge(Array($model), $this->pms);
+		$ctx->rm = $this->rm;
+		$ctx->rc = $this->rc;
+		$ctx->pcs = array_merge(Array($ctx), $this->pcs);
 		return $ctx;
 	}
 
