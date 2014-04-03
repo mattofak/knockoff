@@ -75,9 +75,10 @@ class TAssembly {
 		$matches = array();
 		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)(?:\.([a-zA-Z_$]+))?$/', $expr, $matches ) ) {
 			list( $x, $member ) = $matches;
-			$key = count($matches) == 4 ? $matches[3] : false;
+			$key = count($matches) == 3 ? $matches[2] : false;
 			if ( $key && is_array( $context[$member] ) ) {
-				return ( array_key_exists( $key, $context[$member] ) ? $context[$member][$key] : '' );
+				return ( array_key_exists( $key, $context[$member] ) ?
+					$context[$member][$key] : '' );
 			} else {
 				$res = $context[$member];
 				return $res ? $res : '';
@@ -118,7 +119,9 @@ class TAssembly {
 					$result .= "']";
 					$inArray = false;
 				}
-				$result .= $c;
+				if ($c != ':') {
+					$result .= $c;
+				}
 				$remainingExpr = substr( $expr, $i+1 );
 				if ( preg_match( '/[pri]/', $expr[$i+1] )
 					&& preg_match( '/(?:p[cm]s?|rm|i)(?:[\.\)\]}]|$)/', $remainingExpr ) )
@@ -126,27 +129,47 @@ class TAssembly {
 					// This is an expression referencing the parent, root, or iteration scopes
 					$result .= "\$context['";
 					$inArray = true;
-				} else if ( preg_match( '/^m./', $remainingExpr ) ) {
-					$result .= "\$model['";
-					$i += 2;
-					$inArray = true;
-				} else if ( $c === ':' ) {
+				} else if ( preg_match( '/^m(\.)?/', $remainingExpr, $matches ) ) {
+					if (count($matches) > 1) {
+						$result .= "\$model['";
+						$i += 2;
+						$inArray = true;
+					} else {
+						$result .= '$model';
+						$i++;
+					}
+				} else if ( $c == ':' ) {
 					$result .= '=>';
+				} else if ( preg_match('/^([a-zA-Z_$][a-zA-Z0-9_$]*):/',
+								$remainingExpr, $match) )
+				{
+					// unquoted object key
+					$result .= "'" . $match[1] . "'";
+					$i += strlen($match[1]) + 2;
 				}
+
 
 			} elseif ( $c === "'") {
 				// String literal, just skip over it and add it
 				$match = array();
-				preg_match( "/'(?:[^\\']+|\\')*'/", substr( $expr, $i ), $match );
+				preg_match( '/^(?:[^\\\']+|\\\')*\'/', substr( $expr, $i + 1 ), $match );
 				if ( !empty( $match ) ) {
-					$result .= $match[0];
+					$result .= $c . $match[0];
 					$i += strlen( $match[0] );
 				} else {
-					throw new TAssemblyException( "Caught truncated string!", $expr );
+					throw new TAssemblyException( "Caught truncated string!" . $expr );
 				}
 			} elseif ( $c === "{" ) {
 				// Object
 				$result .= 'Array(';
+
+				if ( preg_match('/^([a-zA-Z_$][a-zA-Z0-9_$]*):/',
+					substr( $expr, $i+1 ), $match) )
+				{
+					// unquoted object key
+					$result .= "'" . $match[1] . "'";
+					$i += strlen($match[1]);
+				}
 
 			} elseif ( $c === "}" ) {
 				// End of object
@@ -173,7 +196,17 @@ class TAssembly {
 		return $result;
 	}
 
-	protected function ctlFn_foreach ($opts, $ctx) {
+	protected static function getTemplate($tpl, $ctx) {
+		if (is_array($tpl)) {
+			return $tpl;
+		} else {
+			// String literal: strip quotes
+			$tpl = preg_replace('/^\'(.*)\'$/', '$1', $tpl);
+			return $ctx->rc->options->partials[$tpl];
+		}
+	}
+
+	protected static function ctlFn_foreach ($opts, $ctx) {
 		$iterable = self::evaluate_expression($opts['data'], $ctx);
 		if (!is_array($iterable)) {
 			return '';
@@ -190,6 +223,75 @@ class TAssembly {
 		return join('', $bits);
 	}
 
+	protected static function ctlFn_template ($opts, $ctx) {
+		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
+		$tpl = self::getTemplate($opts['tpl'], $ctx);
+		$newCtx = $ctx->createChildCtx($model);
+		if ($tpl) {
+			return self::render_context($tpl, $newCtx);
+		}
+	}
+
+	protected static function ctlFn_with ($opts, $ctx) {
+		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
+		$tpl = self::getTemplate($opts['tpl'], $ctx);
+		if ($model && $tpl) {
+			$newCtx = $ctx->createChildCtx($model);
+			return self::render_context($tpl, $newCtx);
+		}
+	}
+
+	protected static function ctlFn_if ($opts, $ctx) {
+		if (self::evaluate_expression($opts['data'], $ctx)) {
+			return self::render_context($opts['tpl'], $ctx);
+		}
+	}
+
+	protected static function ctlFn_ifnot ($opts, $ctx) {
+		if (!self::evaluate_expression($opts['data'], $ctx)) {
+			return self::render_context($opts['tpl'], $ctx);
+		}
+	}
+
+	protected static function ctlFn_attr ($opts, $ctx) {
+		foreach($opts as $name => $val) {
+			if (is_string($val)) {
+				$attVal = self::evaluate_expression($val, $ctx);
+			} else {
+				// must be an object
+				$attVal = $val['v'] ? $val['v'] : '';
+				if (is_array($val['app'])) {
+					foreach ($val['app'] as $appItem) {
+						if (array_key_exists('if', $appItem)
+							&& self::evaluate_expression($appItem['if'], $ctx)) {
+							$attVal .= $appItem['v'] ? $appItem['v'] : '';
+						}
+						if (array_key_exists('ifnot', $appItem)
+							&& ! self::evaluate_expression($appItem['ifnot'], $ctx)) {
+							$attVal .= $appItem['v'] ? $appItem['v'] : '';
+						}
+					}
+				}
+				if (!$attVal && $val['v'] == null) {
+					$attVal = null;
+				}
+			}
+			/*
+			 * TODO: hook up sanitization to MW sanitizer via options?
+			if ($attVal != null) {
+				if ($name == 'href' || $name == 'src') {
+					$attVal = self::sanitizeHref($attVal);
+				} else if ($name == 'style') {
+					$attVal = self::sanitizeStyle($attVal);
+				}
+			}
+			 */
+			if ($attVal != null) {
+				return ' ' . $name . '="' .
+					htmlspecialchars( $attVal, ENT_XML1 | ENT_COMPAT ) . '"';
+			}
+		}
+	}
 }
 
 class TAssemblyOptions {
@@ -241,7 +343,7 @@ class TAssemblyContext implements \ArrayAccess {
 		$ctx->pms = array();
 		$ctx->pcs = array();
 		$ctx->g = $options->globals;
-		$ctx->options = $options->globals;
+		$ctx->options = $options;
 		$ctx->f = array(); //&$ctx->g->functions;
 		$ctx->rc = &$ctx;
 

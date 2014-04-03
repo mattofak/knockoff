@@ -1,5 +1,6 @@
 <?php
 namespace TAssembly;
+require_once('classes/TAssembly.php');
 
 /**
  * @group Extensions/Knockoff
@@ -35,8 +36,10 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 		foreach ( $files as $file ) {
 			$testObj = json_decode( file_get_contents( $file ), true );
 			$options = new TAssemblyOptions();
-			$options->partials = $testObj['partials'];
+			$options->partials = $testObj['partials']['tassembly'];
 			$model = $testObj['model'];
+			$model['echo'] = function ($foo) { return $foo; };
+			$model['echoJSON'] = function ($foo) { return json_encode($foo); };
 
 			foreach ( $testObj['tests'] as &$test ) {
 				$tests[] = array( $test['tassembly'], $model, $options, $test['result'] );
