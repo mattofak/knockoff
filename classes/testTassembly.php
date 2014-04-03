@@ -3,7 +3,10 @@ require_once('./TAssembly.php');
 
 $ta = new TAssembly\TAssembly();
 
-$model = array('foo' => array( 'bar' => Array('baz', 'quux', 'booo') ));
-$template = json_decode('["foo: ",["foreach",{"data":"m.foo.bar","tpl":["\n",["text","m"]]}]]', true);
-
-echo $ta->render($template, $model) . "\n";
+$tests = json_decode(file_get_contents('./tests.json'), true);
+foreach ($tests['tests'] as $test) {
+	$res = $ta->render($test['tassembly'], $tests['model']) . "\n";
+	if ($res != $test['result']) {
+		echo 'Failure for ' . json_encode($test);
+	}
+}
