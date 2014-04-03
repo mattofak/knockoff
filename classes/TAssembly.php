@@ -128,7 +128,7 @@ class TAssembly {
 					$result .= "\$context['";
 					$inArray = true;
 				} else if ( preg_match( '/^m(\.)?/', $remainingExpr, $matches ) ) {
-					if ($matches[1]) {
+					if (count($matches) > 1) {
 						$result .= "\$model['";
 						$i += 2;
 						$inArray = true;
