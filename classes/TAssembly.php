@@ -174,7 +174,17 @@ class TAssembly {
 		return $result;
 	}
 
-	protected function ctlFn_foreach ($opts, $ctx) {
+	protected static function getTemplate($tpl, $ctx) {
+		if (is_array($tpl)) {
+			return $tpl;
+		} else {
+			// String literal: strip quotes
+			$tpl = preg_replace("^'(.*)'$", '$1', $tpl);
+			return $ctx->rc->options->partials[$tpl];
+		}
+	}
+
+	protected static function ctlFn_foreach ($opts, $ctx) {
 		$iterable = self::evaluate_expression($opts['data'], $ctx);
 		if (!is_array($iterable)) {
 			return '';
@@ -191,6 +201,35 @@ class TAssembly {
 		return join('', $bits);
 	}
 
+	protected static function ctlFn_template ($opts, $ctx) {
+		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
+		$tpl = self::getTemplate($opts['tpl'], $ctx);
+		$newCtx = $ctx->createChildCtx($model);
+		if ($tpl) {
+			return $this->render_context($tpl, $newCtx);
+		}
+	}
+
+	protected static function ctlFn_with ($opts, $ctx) {
+		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
+		$tpl = self::getTemplate($opts['tpl'], $ctx);
+		if ($model && $tpl) {
+			$newCtx = $ctx->createChildCtx($model);
+			return $this->render_context($tpl, $newCtx);
+		}
+	}
+
+	protected static function ctlFn_if ($opts, $ctx) {
+		if (self::evaluate_expression($opts['data'], $ctx)) {
+			return $this->render_context($opts['tpl'], $ctx);
+		}
+	}
+
+	protected static function ctlFn_ifnot ($opts, $ctx) {
+		if (!self::evaluate_expression($opts['data'], $ctx)) {
+			return $this->render_context($opts['tpl'], $ctx);
+		}
+	}
 }
 
 class TAssemblyOptions {
