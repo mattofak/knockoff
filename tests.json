@@ -1,4 +1,24 @@
 {
+  "partials": {
+    "knockout": {
+      "testPartial": "<span data-bind=\"text:foo\"></span><span data-bind=\"text:bar\"></span>"
+    },
+    "tassembly": {
+      "testPartial": [
+        "<span>",
+        [
+          "text",
+          "m.foo"
+        ],
+        "</span><span>",
+        [
+          "text",
+          "m.bar"
+        ],
+        "</span>"
+      ]
+    }
+  },
   "model": {
     "arr": [
       1,
