@@ -230,6 +230,46 @@ class TAssembly {
 			return $this->render_context($opts['tpl'], $ctx);
 		}
 	}
+
+	protected static function ctlFn_attr ($opts, $ctx) {
+		foreach($opts as $name => $val) {
+			if (is_string($val)) {
+				$val = self::evaluate_expression($val, $ctx);
+			} else {
+				// must be an object
+				$attVal = $val['v'] ? $val['v'] : '';
+				if (is_array($val['app'])) {
+					foreach ($val['app'] as $appItem) {
+						if ($appItem['if']
+							&& self::evaluate_expression($appItem['if'], $ctx)) {
+							$attVal .= $appItem['v'] ? $appItem['v'] : '';
+						}
+						if ($appItem['ifnot']
+							&& ! self::evaluate_expression($appItem['if'], $ctx)) {
+							$attVal .= $appItem['v'] ? $appItem['v'] : '';
+						}
+					}
+				}
+				if (!$attVal && $val['v'] == null) {
+					$attVal = null;
+				}
+				/*
+				 * TODO: hook up sanitization to MW sanitizer via options?
+				if ($attVal != null) {
+					if ($name == 'href' || $name == 'src') {
+						$attVal = self::sanitizeHref($attVal);
+					} else if ($name == 'style') {
+						$attVal = self::sanitizeStyle($attVal);
+					}
+				}
+				 */
+				if ($attVal != null) {
+					return ' ' . $name . '="' .
+						htmlspecialchars( $attVal, ENT_XML1 | ENT_COMPAT ) . '"';
+				}
+			}
+		}
+	}
 }
 
 class TAssemblyOptions {
