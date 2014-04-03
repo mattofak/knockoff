@@ -75,7 +75,7 @@ class TAssembly {
 		$matches = array();
 		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)(?:\.([a-zA-Z_$]+))?$/', $expr, $matches ) ) {
 			list( $x, $member ) = $matches;
-			$key = count($matches) == 4 ? $matches[3] : false;
+			$key = count($matches) == 3 ? $matches[2] : false;
 			if ( $key && is_array( $context[$member] ) ) {
 				return ( array_key_exists( $key, $context[$member] ) ?
 					$context[$member][$key] : '' );
@@ -206,7 +206,7 @@ class TAssembly {
 		$tpl = self::getTemplate($opts['tpl'], $ctx);
 		$newCtx = $ctx->createChildCtx($model);
 		if ($tpl) {
-			return $this->render_context($tpl, $newCtx);
+			return self::render_context($tpl, $newCtx);
 		}
 	}
 
@@ -215,19 +215,19 @@ class TAssembly {
 		$tpl = self::getTemplate($opts['tpl'], $ctx);
 		if ($model && $tpl) {
 			$newCtx = $ctx->createChildCtx($model);
-			return $this->render_context($tpl, $newCtx);
+			return self::render_context($tpl, $newCtx);
 		}
 	}
 
 	protected static function ctlFn_if ($opts, $ctx) {
 		if (self::evaluate_expression($opts['data'], $ctx)) {
-			return $this->render_context($opts['tpl'], $ctx);
+			return self::render_context($opts['tpl'], $ctx);
 		}
 	}
 
 	protected static function ctlFn_ifnot ($opts, $ctx) {
 		if (!self::evaluate_expression($opts['data'], $ctx)) {
-			return $this->render_context($opts['tpl'], $ctx);
+			return self::render_context($opts['tpl'], $ctx);
 		}
 	}
 
@@ -240,12 +240,12 @@ class TAssembly {
 				$attVal = $val['v'] ? $val['v'] : '';
 				if (is_array($val['app'])) {
 					foreach ($val['app'] as $appItem) {
-						if ($appItem['if']
+						if (array_key_exists('if', $appItem)
 							&& self::evaluate_expression($appItem['if'], $ctx)) {
 							$attVal .= $appItem['v'] ? $appItem['v'] : '';
 						}
-						if ($appItem['ifnot']
-							&& ! self::evaluate_expression($appItem['if'], $ctx)) {
+						if (array_key_exists('ifnot', $appItem)
+							&& ! self::evaluate_expression($appItem['ifnot'], $ctx)) {
 							$attVal .= $appItem['v'] ? $appItem['v'] : '';
 						}
 					}
