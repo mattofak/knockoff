@@ -21,3 +21,6 @@ $wgExtensionCredits['other'][] = array(
 );
 
 $dir = dirname( __FILE__ ) . '/';
+
+require_once( 'Knockoff.classes.php' );
+require_once( 'Knockoff.hooks.php' );

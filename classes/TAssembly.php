@@ -178,7 +178,7 @@ class TAssembly {
 		if (!is_array($iterable)) {
 			return '';
 		}
-		$bits = [];
+		$bits = array();
 		$newCtx = $ctx->createChildCtx(null);
 		$len = count($iterable);
 		for ($i = 0; $i < $len; $i++) {
