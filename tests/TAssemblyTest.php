@@ -38,7 +38,8 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 			$options = new TAssemblyOptions();
 			$options->partials = $testObj['partials']['tassembly'];
 			$model = $testObj['model'];
-			$model['test'] = function ($foo) { return $foo . 'test'; };
+			$model['echo'] = function ($foo) { return $foo; };
+			$model['echoJSON'] = function ($foo) { return json_encode($foo); };
 
 			foreach ( $testObj['tests'] as &$test ) {
 				$tests[] = array( $test['tassembly'], $model, $options, $test['result'] );

@@ -1,12 +1,14 @@
 <?php
-require_once('./TAssembly.php');
+require_once(dirname(__FILE__) . '/../classes/TAssembly.php');
 
 $ta = new TAssembly\TAssembly();
 
-$tests = json_decode(file_get_contents('./tests.json'), true);
+$tests = json_decode(file_get_contents(dirname(__FILE__) .
+	'/../tests/vectors/TAssembly.PartialsTest.json'), true);
 foreach ($tests['tests'] as $test) {
 	$model = $tests['model'];
-	$model['test'] = function ($foo) { return $foo . 'test'; };
+	$model['echo'] = function ($foo) { return $foo; };
+	$model['echoJSON'] = function ($foo) { return json_encode($foo); };
 	$options = new TAssembly\TAssemblyOptions();
 	$options->partials = $tests['partials']['tassembly'];
 	$res = $ta->render($test['tassembly'], $model, $options);

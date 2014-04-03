@@ -1,395 +1,782 @@
 {
-	"partials": {
-		"knockout": {
-			"testPartial": "<span data-bind=\"text:foo\"></span><span data-bind=\"text:bar\"></span>"
-		},
-		"tassembly": {
-			"testPartial": [
-				"<span>",
-				[
-					"text",
-					"m.foo"
-				],
-				"</span><span>",
-				[
-					"text",
-					"m.bar"
-				],
-				"</span>"
-			]
-		}
-	},
-	"model": {
-		"arr": [
-			1,
-			2,
-			3,
-			4,
-			5,
-			6,
-			7
-		],
-		"items": [
-			{
-				"key": "key1",
-				"value": "value1"
-			},
-			{
-				"key": "key2",
-				"value": "value2"
-			}
-		],
-		"obj": {
-			"foo": "foo",
-			"bar": "bar"
-		},
-		"name": "Some name",
-		"content": "Some sample content",
-		"id": "mw1234",
-		"predTrue": true,
-		"predFalse": false
-	},
-	"tests": [
-		{
-			"knockout": "<div data-bind=\"attr: {title: name}, foreach: items\"><span data-bind=\"attr: {title: key}, text: value\"></span></div>",
-			"tassembly": [
-				"<div",
-				[
-					"attr",
-					{
-						"title": "m.name"
-					}
-				],
-				">",
-				[
-					"foreach",
-					{
-						"data": "m.items",
-						"tpl": [
-							"<span",
-							[
-								"attr",
-								{
-									"title": "m.key"
-								}
-							],
-							">",
-							[
-								"text",
-								"m.value"
-							],
-							"</span>"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "<div title=\"Some name\"><span title=\"key1\">value1</span><span title=\"key2\">value2</span></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"if: predTrue\">Hello world</div>",
-			"tassembly": [
-				"<div>",
-				[
-					"if",
-					{
-						"data": "m.predTrue",
-						"tpl": [
-							"Hello world"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "<div>Hello world</div>"
-		},
-		{
-			"knockout": "<div data-bind=\"if: predFalse\">Hello world</div>",
-			"tassembly": [
-				"<div>",
-				[
-					"if",
-					{
-						"data": "m.predFalse",
-						"tpl": [
-							"Hello world"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "<div></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"text: &quot;constant stri'ng expression&quot;\">Hello world</div>",
-			"tassembly": [
-				"<div>",
-				[
-					"text",
-					"'constant stri\\'ng expression'"
-				],
-				"</div>"
-			],
-			"result": "<div>constant stri'ng expression</div>"
-		},
-		{
-			"knockout": "<div data-bind=\"text: 2\">Hello world</div>",
-			"tassembly": [
-				"<div>",
-				[
-					"text",
-					"2"
-				],
-				"</div>"
-			],
-			"result": "<div>2</div>"
-		},
-		{
-			"knockout": "<div data-bind=\"text: 2 + 2 &#x22;\">Hello world</div>",
-			"tassembly": [
-				"<div>Hello world</div>"
-			],
-			"result": "<div>Hello world</div>"
-		},
-		{
-			"knockout": "hello world<span>foo</span><div data-bind=\"text: content\">ipsum</div>",
-			"tassembly": [
-				"hello world<span>foo</span><div>",
-				[
-					"text",
-					"m.content"
-				],
-				"</div>"
-			],
-			"result": "hello world<span>foo</span><div>Some sample content</div>"
-		},
-		{
-			"knockout": "hello world<span>foo</span><div data-bind=\"with: obj\"><span data-bind=\"text: foo\">hopefully foo</span><span data-bind=\"text:bar\">hopefully bar</span></div>",
-			"tassembly": [
-				"hello world<span>foo</span><div",
-				[
-					"attr",
-					{
-						"style": {
-							"v": null,
-							"app": [
-								{
-									"ifnot": "m.obj",
-									"v": "display: none !important;"
-								}
-							]
-						}
-					}
-				],
-				">",
-				[
-					"with",
-					{
-						"data": "m.obj",
-						"tpl": [
-							"<span>",
-							[
-								"text",
-								"m.foo"
-							],
-							"</span><span>",
-							[
-								"text",
-								"m.bar"
-							],
-							"</span>"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "hello world<span>foo</span><div><span>foo</span><span>bar</span></div>"
-		},
-		{
-			"knockout": "hello world<div data-bind=\"template:{name:'testPartial', data: obj}\"></div>",
-			"tassembly": [
-				"hello world<div>",
-				[
-					"template",
-					{
-						"data": "m.obj",
-						"tpl": "'testPartial'"
-					}
-				],
-				"</div>"
-			],
-			"result": "hello world<div><span>foo</span><span>bar</span></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"visible:predFalse\"><span data-bind=\"text:name\"></span></div>",
-			"tassembly": [
-				"<div",
-				[
-					"attr",
-					{
-						"style": {
-							"v": null,
-							"app": [
-								{
-									"ifnot": "m.predFalse",
-									"v": "display: none !important;"
-								}
-							]
-						}
-					}
-				],
-				"><span>",
-				[
-					"text",
-					"m.name"
-				],
-				"</span></div>"
-			],
-			"result": "<div style=\"display: none !important;\"><span>Some name</span></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"with:predFalse\"><span data-bind=\"text:name\"></span></div>",
-			"tassembly": [
-				"<div",
-				[
-					"attr",
-					{
-						"style": {
-							"v": null,
-							"app": [
-								{
-									"ifnot": "m.predFalse",
-									"v": "display: none !important;"
-								}
-							]
-						}
-					}
-				],
-				">",
-				[
-					"with",
-					{
-						"data": "m.predFalse",
-						"tpl": [
-							"<span>",
-							[
-								"text",
-								"m.name"
-							],
-							"</span>"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "<div style=\"display: none !important;\"></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"with:obj\"><span data-bind=\"text:foo\"></span></div>",
-			"tassembly": [
-				"<div",
-				[
-					"attr",
-					{
-						"style": {
-							"v": null,
-							"app": [
-								{
-									"ifnot": "m.obj",
-									"v": "display: none !important;"
-								}
-							]
-						}
-					}
-				],
-				">",
-				[
-					"with",
-					{
-						"data": "m.obj",
-						"tpl": [
-							"<span>",
-							[
-								"text",
-								"m.foo"
-							],
-							"</span>"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "<div><span>foo</span></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"attr:{id:id},foreach:items\"><div data-bind=\"attr:{id:key},text:value\"></div></div>",
-			"tassembly": [
-				"<div",
-				[
-					"attr",
-					{
-						"id": "m.id"
-					}
-				],
-				">",
-				[
-					"foreach",
-					{
-						"data": "m.items",
-						"tpl": [
-							"<div",
-							[
-								"attr",
-								{
-									"id": "m.key"
-								}
-							],
-							">",
-							[
-								"text",
-								"m.value"
-							],
-							"</div>"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "<div id=\"mw1234\"><div id=\"key1\">value1</div><div id=\"key2\">value2</div></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"foreach:arr\"><div data-bind=\"text:$parent.test($data)\"></div></div>",
-			"tassembly": [
-				"<div>",
-				[
-					"foreach",
-					{
-						"data": "m.arr",
-						"tpl": [
-							"<div>",
-							[
-								"text",
-								"pm.test(m)"
-							],
-							"</div>"
-						]
-					}
-				],
-				"</div>"
-			],
-			"result": "<div><div>1test</div><div>2test</div><div>3test</div><div>4test</div><div>5test</div><div>6test</div><div>7test</div></div>"
-		},
-		{
-			"knockout": "<div data-bind=\"text: test( { id : &quot;id&quot; } )\"></div>",
-			"tassembly": [
-				"<div>",
-				[
-					"text",
-					"m.test({id:'id'})"
-				],
-				"</div>"
-			],
-			"result": "<div>[object Object]test</div>"
-		}
-	]
+  "partials": {
+    "knockout": {
+      "testPartial": "<span data-bind=\"text:foo\"></span><span data-bind=\"text:bar\"></span>"
+    },
+    "tassembly": {
+      "testPartial": [
+        "<span>",
+        [
+          "text",
+          "m.foo"
+        ],
+        "</span><span>",
+        [
+          "text",
+          "m.bar"
+        ],
+        "</span>"
+      ]
+    }
+  },
+  "model": {
+    "arr": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "items": [
+      {
+        "key": "key1",
+        "value": "value1"
+      },
+      {
+        "key": "key2",
+        "value": "value2"
+      }
+    ],
+    "obj": {
+      "foo": "foo",
+      "bar": "bar"
+    },
+    "name": "Some name",
+    "content": "Some sample content",
+    "id": "mw1234",
+    "predTrue": true,
+    "predFalse": false,
+    "nullItem": null,
+    "someItems": [
+      {
+        "childProp": "first child"
+      },
+      {
+        "childProp": "second child"
+      }
+    ]
+  },
+  "tests": [
+    {
+      "knockout": "<div data-bind=\"attr: {title: name}, foreach: items\"><span data-bind=\"attr: {title: key}, text: value\"></span></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "title": "m.name"
+          }
+        ],
+        ">",
+        [
+          "foreach",
+          {
+            "data": "m.items",
+            "tpl": [
+              "<span",
+              [
+                "attr",
+                {
+                  "title": "m.key"
+                }
+              ],
+              ">",
+              [
+                "text",
+                "m.value"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div title=\"Some name\"><span title=\"key1\">value1</span><span title=\"key2\">value2</span></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: myArray'><span data-bind='text: $data'></span></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.myArray",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"if: predTrue\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "if",
+          {
+            "data": "m.predTrue",
+            "tpl": [
+              "Hello world"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div>Hello world</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"if: predFalse\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "if",
+          {
+            "data": "m.predFalse",
+            "tpl": [
+              "Hello world"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"if: predTrue, text: name\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "m.name"
+        ],
+        "</div>"
+      ],
+      "result": "<div>Some name</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"if: predFalse, text: name\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "m.name"
+        ],
+        "</div>"
+      ],
+      "result": "<div>Some name</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"ifnot: predTrue\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "ifnot",
+          {
+            "data": "m.predTrue",
+            "tpl": [
+              "Hello world"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"ifnot: predFalse\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "ifnot",
+          {
+            "data": "m.predFalse",
+            "tpl": [
+              "Hello world"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div>Hello world</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"ifnot: predTrue, text: name\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "m.name"
+        ],
+        "</div>"
+      ],
+      "result": "<div>Some name</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"ifnot: predFalse, text: name\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "m.name"
+        ],
+        "</div>"
+      ],
+      "result": "<div>Some name</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: &quot;constant stri'ng expression&quot;\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "'constant stri\\'ng expression'"
+        ],
+        "</div>"
+      ],
+      "result": "<div>constant stri'ng expression</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: &quot;constant \\&quot;stri'ng expression&quot;\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "'constant \"stri\\'ng expression'"
+        ],
+        "</div>"
+      ],
+      "result": "<div>constant \"stri'ng expression</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: 'constant string'\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "'constant string'"
+        ],
+        "</div>"
+      ],
+      "result": "<div>constant string</div>"
+    },
+    {
+      "knockout": "<div data-bind='text: \"constant \\&quot;string\"'>Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "'constant \"string'"
+        ],
+        "</div>"
+      ],
+      "result": "<div>constant \"string</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: 12345\">Some number</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "12345"
+        ],
+        "</div>"
+      ],
+      "result": "<div>12345</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: 2\">Hello world</div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "2"
+        ],
+        "</div>"
+      ],
+      "result": "<div>2</div>"
+    },
+    {
+      "knockout": "hello world<span>foo</span><div data-bind=\"text: content\">ipsum</div>",
+      "tassembly": [
+        "hello world<span>foo</span><div>",
+        [
+          "text",
+          "m.content"
+        ],
+        "</div>"
+      ],
+      "result": "hello world<span>foo</span><div>Some sample content</div>"
+    },
+    {
+      "knockout": "hello world<span>foo</span><div data-bind=\"with: obj\"><span data-bind=\"text: foo\">hopefully foo</span><span data-bind=\"text:bar\">hopefully bar</span></div>",
+      "tassembly": [
+        "hello world<span>foo</span><div",
+        [
+          "attr",
+          {
+            "style": {
+              "v": null,
+              "app": [
+                {
+                  "ifnot": "m.obj",
+                  "v": "display: none !important;"
+                }
+              ]
+            }
+          }
+        ],
+        ">",
+        [
+          "with",
+          {
+            "data": "m.obj",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m.foo"
+              ],
+              "</span><span>",
+              [
+                "text",
+                "m.bar"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "hello world<span>foo</span><div><span>foo</span><span>bar</span></div>"
+    },
+    {
+      "knockout": "hello world<div data-bind=\"template:{name:'testPartial', data: obj}\"></div>",
+      "tassembly": [
+        "hello world<div>",
+        [
+          "template",
+          {
+            "data": "m.obj",
+            "tpl": "'testPartial'"
+          }
+        ],
+        "</div>"
+      ],
+      "result": "hello world<div><span>foo</span><span>bar</span></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"visible:predFalse\"><span data-bind=\"text:name\"></span></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "style": {
+              "v": null,
+              "app": [
+                {
+                  "ifnot": "m.predFalse",
+                  "v": "display: none !important;"
+                }
+              ]
+            }
+          }
+        ],
+        "><span>",
+        [
+          "text",
+          "m.name"
+        ],
+        "</span></div>"
+      ],
+      "result": "<div style=\"display: none !important;\"><span>Some name</span></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"with:predFalse\"><span data-bind=\"text:name\"></span></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "style": {
+              "v": null,
+              "app": [
+                {
+                  "ifnot": "m.predFalse",
+                  "v": "display: none !important;"
+                }
+              ]
+            }
+          }
+        ],
+        ">",
+        [
+          "with",
+          {
+            "data": "m.predFalse",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m.name"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div style=\"display: none !important;\"></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"with:obj\"><span data-bind=\"text:foo\"></span></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "style": {
+              "v": null,
+              "app": [
+                {
+                  "ifnot": "m.obj",
+                  "v": "display: none !important;"
+                }
+              ]
+            }
+          }
+        ],
+        ">",
+        [
+          "with",
+          {
+            "data": "m.obj",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m.foo"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><span>foo</span></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"attr:{id:id},foreach:items\"><div data-bind=\"attr:{id:key},text:value\"></div></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "id": "m.id"
+          }
+        ],
+        ">",
+        [
+          "foreach",
+          {
+            "data": "m.items",
+            "tpl": [
+              "<div",
+              [
+                "attr",
+                {
+                  "id": "m.key"
+                }
+              ],
+              ">",
+              [
+                "text",
+                "m.value"
+              ],
+              "</div>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div id=\"mw1234\"><div id=\"key1\">value1</div><div id=\"key2\">value2</div></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"foreach:arr\"><div data-bind=\"text:$parent.echo($data)\"></div></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.arr",
+            "tpl": [
+              "<div>",
+              [
+                "text",
+                "pm.echo(m)"
+              ],
+              "</div>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: echoJSON( { id : &quot;id&quot; } )\"></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "m.echoJSON({id:'id'})"
+        ],
+        "</div>"
+      ],
+      "result": "<div>{\"id\":\"id\"}</div>"
+    },
+    {
+      "knockout": "<div data-bind='attr: {firstAttribute: myValue, \"second-attribute\": true}'></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "firstAttribute": "m.myValue",
+            "second-attribute": "m.true"
+          }
+        ],
+        "></div>"
+      ],
+      "result": "<div></div>"
+    },
+    {
+      "knockout": "<input data-bind='attr: { title: nullItem }' />",
+      "tassembly": [
+        "<input",
+        [
+          "attr",
+          {
+            "title": "m.nullItem"
+          }
+        ],
+        "/>"
+      ],
+      "result": "<input/>"
+    },
+    {
+      "knockout": "<input data-bind='attr: { title: name }' />",
+      "tassembly": [
+        "<input",
+        [
+          "attr",
+          {
+            "title": "m.name"
+          }
+        ],
+        "/>"
+      ],
+      "result": "<input title=\"Some name\"/>"
+    },
+    {
+      "knockout": "<div class='oldClass' data-bind=\"attr: {'class': myprop}\"></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "class": "m.myprop"
+          }
+        ],
+        "></div>"
+      ],
+      "result": "<div></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: nullItem'><span data-bind='text: nullItem.nonExistentChildProp'></span></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.nullItem",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m.nullItem.nonExistentChildProp"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: someItems'><span data-bind='text: childProp'></span></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.someItems",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m.childProp"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><span>first child</span><span>second child</span></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: someItems'><span data-bind='text: $root.echoJSON($data)'></span></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.someItems",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "rm.echoJSON(m)"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><span>{\"childProp\":\"first child\"}</span><span>{\"childProp\":\"second child\"}</span></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: someItems'><span data-bind='text: childProp'></span></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.someItems",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m.childProp"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><span>first child</span><span>second child</span></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: items'><div data-bind='foreach: children'>(Val: <span data-bind='text: $data'></span>, Parents: <span data-bind='text: $parents.length'></span>, Rootval: <span data-bind='text: $root.rootVal'></span>)</div></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.items",
+            "tpl": [
+              "<div>",
+              [
+                "foreach",
+                {
+                  "data": "m.children",
+                  "tpl": [
+                    "(Val: <span>",
+                    [
+                      "text",
+                      "m"
+                    ],
+                    "</span>, Parents: <span>",
+                    [
+                      "text",
+                      "pms.length"
+                    ],
+                    "</span>, Rootval: <span>",
+                    [
+                      "text",
+                      "rm.rootVal"
+                    ],
+                    "</span>)"
+                  ]
+                }
+              ],
+              "</div>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><div></div><div></div></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: arr'><input data-bind='value: $rawData'/></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.arr",
+            "tpl": [
+              "<input/>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><input/><input/><input/><input/><input/><input/><input/></div>"
+    },
+    {
+      "knockout": "<div data-bind='foreach: arr'><span data-bind='text: $data'></span></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "foreach",
+          {
+            "data": "m.arr",
+            "tpl": [
+              "<span>",
+              [
+                "text",
+                "m"
+              ],
+              "</span>"
+            ]
+          }
+        ],
+        "</div>"
+      ],
+      "result": "<div><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span></div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: 2 + 2 &#x22;\">Hello world</div>",
+      "tassembly": [
+        "<div>Hello world</div>"
+      ],
+      "result": "<div>Hello world</div>"
+    }
+  ]
 }

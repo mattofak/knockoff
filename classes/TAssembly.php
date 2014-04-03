@@ -272,9 +272,9 @@ class TAssembly {
 						}
 					}
 				}
-			}
-			if (!$attVal && $val['v'] == null) {
-				$attVal = null;
+				if (!$attVal && $val['v'] == null) {
+					$attVal = null;
+				}
 			}
 			/*
 			 * TODO: hook up sanitization to MW sanitizer via options?
