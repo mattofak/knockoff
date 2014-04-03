@@ -558,7 +558,7 @@
         ],
         "></div>"
       ],
-      "result": "<div firstAttribute=\"\" second-attribute=\"\"></div>"
+      "result": "<div></div>"
     },
     {
       "knockout": "<input data-bind='attr: { title: nullItem }' />",
@@ -600,7 +600,7 @@
         ],
         "></div>"
       ],
-      "result": "<div class=\"\"></div>"
+      "result": "<div></div>"
     },
     {
       "knockout": "<div data-bind='foreach: nullItem'><span data-bind='text: nullItem.nonExistentChildProp'></span></div>",
