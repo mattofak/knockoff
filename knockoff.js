@@ -12,7 +12,7 @@ var TA = require('tassembly'),
  */
 function compile(template, options) {
 	var templateASM = koCompiler.compile(template, options);
-	if (options.partials) {
+	if (options && options.partials) {
 		// compile partials
 		var partials = options.partials;
 		for (var name in partials) {
