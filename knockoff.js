@@ -21,7 +21,11 @@ function compile(template, options) {
 			}
 		}
 	}
-	return TA.compile(templateASM, options);
+	if (options && options.toTAssembly) {
+		return templateASM;
+	} else {
+		return TA.compile(templateASM, options);
+	}
 }
 
 
