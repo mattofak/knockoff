@@ -22,17 +22,13 @@ class TAssembly {
 	 *
 	 * @return string HTML
 	 */
-	public static function render( array &$ir, array &$model = array(), Array &$options = null ) {
-		if ( $options == null ) {
-			$options = Array('globals' => array());
-		}
+	public static function render( array &$ir, array &$model = array(), Array &$options = Array() ) {
 
 		$ctx = Array (
 			'rm' => &$model,
 			'm' => &$model,
 			'pm' => null,
 			'pms' => array(),
-			'pcs' => array(),
 			'g' => isset($options['globals']) ? $options['globals'] : Array(),
 			'options' => &$options
 		);
@@ -273,7 +269,6 @@ class TAssembly {
 			'rm' => &$parCtx['rm'],
 			'rc' => &$parCtx['rc'],
 		);
-		$ctx['pcs'] = array_merge(Array($ctx), $parCtx['pcs']);
 		return $ctx;
 	}
 
