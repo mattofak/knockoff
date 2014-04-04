@@ -512,6 +512,20 @@
       "result": "<div id=\"mw1234\"><div id=\"key1\">value1</div><div id=\"key2\">value2</div></div>"
     },
     {
+      "knockout": "<div data-bind=\"attr:{id:items[0].key}\"></div>",
+      "tassembly": [
+        "<div",
+        [
+          "attr",
+          {
+            "id": "m.items[0].key"
+          }
+        ],
+        "></div>"
+      ],
+      "result": "<div id=\"key1\"></div>"
+    },
+    {
       "knockout": "<div data-bind=\"foreach:arr\"><div data-bind=\"text:$.echo($data)\"></div></div>",
       "tassembly": [
         "<div>",

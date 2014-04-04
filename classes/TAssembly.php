@@ -69,7 +69,7 @@ class TAssembly {
 							if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $val, $matches) ) {
 								$attVal = @$ctx['m'][$matches[1]];
 							} else {
-								$attVal = TAssembly::evaluate_expression( $ctlOpts, $ctx );
+								$attVal = TAssembly::evaluate_expression( $val, $ctx );
 							}
 						} else {
 							// must be an object
