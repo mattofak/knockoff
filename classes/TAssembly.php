@@ -42,7 +42,7 @@ class TAssembly {
 	}
 
 
-	protected static function render_context( array &$ir, Array &$context ) {
+	protected static function render_context( array &$ir, Array &$ctx ) {
 		$bits = '';
 		static $builtins = Array (
 			'foreach' => true,
@@ -59,15 +59,51 @@ class TAssembly {
 				$ctlFn = $bit[0];
 				$ctlOpts = $bit[1];
 				if ( $ctlFn === 'text' ) {
-					$val = TAssembly::evaluate_expression( $ctlOpts, $context );
+					$val = TAssembly::evaluate_expression( $ctlOpts, $ctx );
 					if ( ! is_null( $val ) ) {
 						$bits .= htmlspecialchars( $val, ENT_NOQUOTES );
 					}
 				} elseif ( $ctlFn === 'attr' ) {
-					$bits .= self::ctlFn_attr( $ctlOpts, $context );
+					foreach($ctlOpts as $name => &$val) {
+						if (is_string($val)) {
+							$attVal = self::evaluate_expression($val, $ctx);
+						} else {
+							// must be an object
+							$attVal = $val['v'] ? $val['v'] : '';
+							if (is_array($val['app'])) {
+								foreach ($val['app'] as $appItem) {
+									if (isset($appItem['if'])
+										&& self::evaluate_expression($appItem['if'], $ctx)) {
+											$attVal .= $appItem['v'] ? $appItem['v'] : '';
+										}
+									if (isset($appItem['ifnot'])
+										&& ! self::evaluate_expression($appItem['ifnot'], $ctx)) {
+											$attVal .= $appItem['v'] ? $appItem['v'] : '';
+										}
+								}
+							}
+							if (!$attVal && $val['v'] === null) {
+								$attVal = null;
+							}
+						}
+						/*
+						 * TODO: hook up sanitization to MW sanitizer via options?
+						 if ($attVal != null) {
+							 if ($name === 'href' || $name === 'src') {
+								 $attVal = self::sanitizeHref($attVal);
+					} else if ($name === 'style') {
+						$attVal = self::sanitizeStyle($attVal);
+					}
+					}
+						 */
+						if ($attVal != null) {
+							$escaped = htmlspecialchars( $attVal, ENT_COMPAT ) . '"';
+							$bits .= ' ' . $name . '="' . $escaped;
+						}
+					}
 				} elseif ( isset($builtins[$ctlFn]) ) {
 					$ctlFn = 'ctlFn_' . $ctlFn;
-					$bits .= self::$ctlFn( $ctlOpts, $context );
+					$bits .= self::$ctlFn( $ctlOpts, $ctx );
 				} else {
 					throw new TAssemblyException( "Function '$ctlFn' does not exist in the context.", $bit );
 				}
@@ -162,7 +198,7 @@ class TAssembly {
 						$result .= '$model';
 						$i++;
 					}
-				} else if ( $c == ':' ) {
+				} else if ( $c === ':' ) {
 					$result .= '=>';
 				} else if ( preg_match('/^([a-zA-Z_$][a-zA-Z0-9_$]*):/',
 								$remainingExpr, $match) )
@@ -222,12 +258,12 @@ class TAssembly {
 
 	protected static function createChildCtx ( &$parCtx, &$model ) {
 		$ctx = Array(
-			'm' => $model,
-			'pc' => $parCtx,
-			'pm' => $parCtx['m'],
+			'm' => &$model,
+			'pc' => &$parCtx,
+			'pm' => &$parCtx['m'],
 			'pms' => array_merge(Array($model), $parCtx['pms']),
-			'rm' => $parCtx['rm'],
-			'rc' => $parCtx['rc'],
+			'rm' => &$parCtx['rm'],
+			'rc' => &$parCtx['rc'],
 		);
 		$ctx['pcs'] = array_merge(Array($ctx), $parCtx['pcs']);
 		return $ctx;
@@ -252,8 +288,8 @@ class TAssembly {
 		$newCtx = self::createChildCtx($ctx, null);
 		$len = count($iterable);
 		for ($i = 0; $i < $len; $i++) {
-			$newCtx['m'] = $iterable[$i];
-			$newCtx['pms'][0] = $iterable[$i];
+			$newCtx['m'] = &$iterable[$i];
+			$newCtx['pms'][0] = &$iterable[$i];
 			$newCtx['i'] = $i;
 			$bits[] = self::render_context($opts['tpl'], $newCtx);
 		}
@@ -287,46 +323,6 @@ class TAssembly {
 	protected static function ctlFn_ifnot (&$opts, &$ctx) {
 		if (!self::evaluate_expression($opts['data'], $ctx)) {
 			return self::render_context($opts['tpl'], $ctx);
-		}
-	}
-
-	protected static function ctlFn_attr (&$opts, &$ctx) {
-		foreach($opts as $name => $val) {
-			if (is_string($val)) {
-				$attVal = self::evaluate_expression($val, $ctx);
-			} else {
-				// must be an object
-				$attVal = $val['v'] ? $val['v'] : '';
-				if (is_array($val['app'])) {
-					foreach ($val['app'] as $appItem) {
-						if (array_key_exists('if', $appItem)
-							&& self::evaluate_expression($appItem['if'], $ctx)) {
-							$attVal .= $appItem['v'] ? $appItem['v'] : '';
-						}
-						if (array_key_exists('ifnot', $appItem)
-							&& ! self::evaluate_expression($appItem['ifnot'], $ctx)) {
-							$attVal .= $appItem['v'] ? $appItem['v'] : '';
-						}
-					}
-				}
-				if (!$attVal && $val['v'] == null) {
-					$attVal = null;
-				}
-			}
-			/*
-			 * TODO: hook up sanitization to MW sanitizer via options?
-			if ($attVal != null) {
-				if ($name == 'href' || $name == 'src') {
-					$attVal = self::sanitizeHref($attVal);
-				} else if ($name == 'style') {
-					$attVal = self::sanitizeStyle($attVal);
-				}
-			}
-			 */
-			if ($attVal != null) {
-				$escaped = htmlspecialchars( $attVal, ENT_COMPAT ) . '"';
-				return ' ' . $name . '="' . $escaped;
-			}
 		}
 	}
 }
