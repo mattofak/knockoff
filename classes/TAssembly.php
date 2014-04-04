@@ -59,14 +59,22 @@ class TAssembly {
 				$ctlFn = $bit[0];
 				$ctlOpts = $bit[1];
 				if ( $ctlFn === 'text' ) {
-					$val = TAssembly::evaluate_expression( $ctlOpts, $ctx );
+					if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $ctlOpts, $matches) ) {
+						$val = $ctx['m'][$matches[1]];
+					} else {
+						$val = TAssembly::evaluate_expression( $ctlOpts, $ctx );
+					}
 					if ( ! is_null( $val ) ) {
 						$bits .= htmlspecialchars( $val, ENT_NOQUOTES );
 					}
 				} elseif ( $ctlFn === 'attr' ) {
 					foreach($ctlOpts as $name => &$val) {
 						if (is_string($val)) {
-							$attVal = self::evaluate_expression($val, $ctx);
+							if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $val, $matches) ) {
+								$attVal = $ctx['m'][$matches[1]];
+							} else {
+								$attVal = TAssembly::evaluate_expression( $ctlOpts, $ctx );
+							}
 						} else {
 							// must be an object
 							$attVal = $val['v'] ? $val['v'] : '';
@@ -91,10 +99,10 @@ class TAssembly {
 						 if ($attVal != null) {
 							 if ($name === 'href' || $name === 'src') {
 								 $attVal = self::sanitizeHref($attVal);
-					} else if ($name === 'style') {
-						$attVal = self::sanitizeStyle($attVal);
-					}
-					}
+							 } else if ($name === 'style') {
+								 $attVal = self::sanitizeStyle($attVal);
+							 }
+						 }
 						 */
 						if ($attVal != null) {
 							$escaped = htmlspecialchars( $attVal, ENT_COMPAT ) . '"';
