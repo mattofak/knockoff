@@ -543,7 +543,79 @@
         ],
         "</div>"
       ],
-      "result": "<div>{\"id\":\"id\"}</div>"
+      "result": "<div>[{\"id\":\"id\"}]</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: $.echoJSON( { id : 'a', foo: 'foo' } )\"></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "rc.g.echoJSON({id:'a',foo:'foo'})"
+        ],
+        "</div>"
+      ],
+      "result": "<div>[{\"id\":\"a\",\"foo\":\"foo\"}]</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: $.echoJSON( 1,2,3,4 )\"></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "rc.g.echoJSON(1,2,3,4)"
+        ],
+        "</div>"
+      ],
+      "result": "<div>[1,2,3,4]</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: $.echoJSON( items )\"></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "rc.g.echoJSON(m.items)"
+        ],
+        "</div>"
+      ],
+      "result": "<div>[[{\"key\":\"key1\",\"value\":\"value1\"},{\"key\":\"key2\",\"value\":\"value2\"}]]</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: $.echoJSON( items[0] )\"></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "rc.g.echoJSON(m.items[0])"
+        ],
+        "</div>"
+      ],
+      "result": "<div>[{\"key\":\"key1\",\"value\":\"value1\"}]</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: $.echoJSON( items[0].key )\"></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "rc.g.echoJSON(m.items[0].key)"
+        ],
+        "</div>"
+      ],
+      "result": "<div>[\"key1\"]</div>"
+    },
+    {
+      "knockout": "<div data-bind=\"text: $.echoJSON( items[0].key,items[1].key )\"></div>",
+      "tassembly": [
+        "<div>",
+        [
+          "text",
+          "rc.g.echoJSON(m.items[0].key,m.items[1].key)"
+        ],
+        "</div>"
+      ],
+      "result": "<div>[\"key1\",\"key2\"]</div>"
     },
     {
       "knockout": "<div data-bind='attr: {firstAttribute: myValue, \"second-attribute\": true}'></div>",
@@ -666,7 +738,7 @@
         ],
         "</div>"
       ],
-      "result": "<div><span>{\"childProp\":\"first child\"}</span><span>{\"childProp\":\"second child\"}</span></div>"
+      "result": "<div><span>[{\"childProp\":\"first child\"}]</span><span>[{\"childProp\":\"second child\"}]</span></div>"
     },
     {
       "knockout": "<div data-bind='foreach: someItems'><span data-bind='text: childProp'></span></div>",

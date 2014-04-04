@@ -56,7 +56,7 @@ class TAssembly {
 				$ctlOpts = $bit[1];
 				if ( $ctlFn === 'text' ) {
 					if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $ctlOpts, $matches) ) {
-						$val = $ctx['m'][$matches[1]];
+						$val = @$ctx['m'][$matches[1]];
 					} else {
 						$val = TAssembly::evaluate_expression( $ctlOpts, $ctx );
 					}
@@ -67,7 +67,7 @@ class TAssembly {
 					foreach($ctlOpts as $name => &$val) {
 						if (is_string($val)) {
 							if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $val, $matches) ) {
-								$attVal = $ctx['m'][$matches[1]];
+								$attVal = @$ctx['m'][$matches[1]];
 							} else {
 								$attVal = TAssembly::evaluate_expression( $ctlOpts, $ctx );
 							}
@@ -132,7 +132,7 @@ class TAssembly {
 	protected static function evaluate_expression( &$expr, Array &$context ) {
 		// Simple variable
 		if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $expr, $matches) ) {
-			return $context['m'][$matches[1]];
+			return @$context['m'][$matches[1]];
 		}
 
 		// String literal
@@ -156,7 +156,7 @@ class TAssembly {
 
 		// More complex expression which must be rewritten to use PHP style accessors
 		$newExpr = self::rewriteExpression( $expr );
-		//echo $newExpr . "\n";
+		//echo "$expr\n$newExpr\n";
 		$model = $context['m'];
 		return eval('return ' . $newExpr . ';');
 	}
@@ -176,8 +176,8 @@ class TAssembly {
 		$inArray = false;
 
 		do {
-			if ( preg_match( '/^$|[\[:(]/', $c ) ) {
-				// Match the empty string (start of expression), or one of [, :, (
+			if ( preg_match( '/^$|[\[:(,]/', $c ) ) {
+				// Match the empty string (start of expression), or one of '[:(,'
 				if ( $inArray ) {
 					// close the array reference
 					$result .= "']";
@@ -204,24 +204,27 @@ class TAssembly {
 					}
 				} else if ( $c === ':' ) {
 					$result .= '=>';
-				} else if ( preg_match('/^([a-zA-Z_$][a-zA-Z0-9_$]*):/',
+				} else if ( ( $c === '{' || $c === ',' )
+					&& preg_match('/^([a-zA-Z_$][a-zA-Z0-9_$]*):/',
 								$remainingExpr, $match) )
 				{
 					// unquoted object key
 					$result .= "'" . $match[1] . "'";
-					$i += strlen($match[1]) + 2;
+					$i += strlen($match[1]);
 				}
 
 
 			} elseif ( $c === "'") {
 				// String literal, just skip over it and add it
 				$match = array();
-				preg_match( '/^(?:[^\\\']+|\\\')*\'/', substr( $expr, $i + 1 ), $match );
+				$remainingExpr = substr( $expr, $i+1 );
+				preg_match( '/^(?:[^\\\\\']+|\\\\\'|[\\\\])*\'/', $remainingExpr, $match );
 				if ( !empty( $match ) ) {
 					$result .= $c . $match[0];
 					$i += strlen( $match[0] );
 				} else {
-					throw new TAssemblyException( "Caught truncated string!" . $expr );
+					throw new TAssemblyException( "Caught truncated string in " .
+						json_encode($expr) );
 				}
 			} elseif ( $c === "{" ) {
 				// Object
@@ -245,6 +248,12 @@ class TAssembly {
 					$inArray = true;
 					$result .= "['";
 				}
+			} else if ( $c === ')' && $inArray ) {
+				if ( $inArray ) {
+					$result .= "']";
+					$inArray = false;
+				}
+				$result .= $c;
 			} else {
 				// Anything else is sane as it conforms to the quite
 				// restricted TAssembly spec, just pass it through
@@ -252,7 +261,8 @@ class TAssembly {
 			}
 
 			$i++;
-		} while ( $i < $len && $c = $expr[$i] );
+			$c = @$expr[$i];
+		} while ( $i < $len);
 		if ($inArray) {
 			// close an open array reference
 			$result .= "']";
@@ -288,7 +298,7 @@ class TAssembly {
 			return '';
 		}
 		$bits = array();
-		$newCtx = self::createChildCtx($ctx, null);
+		$newCtx = self::createChildCtx($ctx, $ctx);
 		$len = count($iterable);
 		for ($i = 0; $i < $len; $i++) {
 			$newCtx['m'] = &$iterable[$i];

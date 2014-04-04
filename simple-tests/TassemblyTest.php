@@ -9,8 +9,15 @@ foreach ($tests['tests'] as $test) {
 	$model = $tests['model'];
 	$model['echo'] = function ($foo) { return $foo; };
 	$model['echoJSON'] = function ($foo) { return json_encode($foo); };
-	$options = new TAssembly\TAssemblyOptions();
-	$options->partials = $tests['partials']['tassembly'];
+	$options = Array(
+		'partials' => $tests['partials']['tassembly'],
+		'globals' => Array(
+			'echo' => function ($foo) { return $foo; },
+			'echoJSON' => function () {
+				return json_encode(func_get_args());
+			},
+		),
+	);
 	$res = $ta->render($test['tassembly'], $model, $options);
 	if ($res != $test['result']) {
 		echo 'FAIL  : ' . json_encode($test['tassembly']) .
