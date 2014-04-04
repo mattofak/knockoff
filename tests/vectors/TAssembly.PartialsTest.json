@@ -512,7 +512,7 @@
       "result": "<div id=\"mw1234\"><div id=\"key1\">value1</div><div id=\"key2\">value2</div></div>"
     },
     {
-      "knockout": "<div data-bind=\"foreach:arr\"><div data-bind=\"text:$parent.echo($data)\"></div></div>",
+      "knockout": "<div data-bind=\"foreach:arr\"><div data-bind=\"text:$.echo($data)\"></div></div>",
       "tassembly": [
         "<div>",
         [
@@ -523,7 +523,7 @@
               "<div>",
               [
                 "text",
-                "pm.echo(m)"
+                "rc.g.echo(m)"
               ],
               "</div>"
             ]
@@ -534,12 +534,12 @@
       "result": "<div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div></div>"
     },
     {
-      "knockout": "<div data-bind=\"text: echoJSON( { id : &quot;id&quot; } )\"></div>",
+      "knockout": "<div data-bind=\"text: $.echoJSON( { id : &quot;id&quot; } )\"></div>",
       "tassembly": [
         "<div>",
         [
           "text",
-          "m.echoJSON({id:'id'})"
+          "rc.g.echoJSON({id:'id'})"
         ],
         "</div>"
       ],
@@ -647,7 +647,7 @@
       "result": "<div><span>first child</span><span>second child</span></div>"
     },
     {
-      "knockout": "<div data-bind='foreach: someItems'><span data-bind='text: $root.echoJSON($data)'></span></div>",
+      "knockout": "<div data-bind='foreach: someItems'><span data-bind='text: $.echoJSON($data)'></span></div>",
       "tassembly": [
         "<div>",
         [
@@ -658,7 +658,7 @@
               "<span>",
               [
                 "text",
-                "rm.echoJSON(m)"
+                "rc.g.echoJSON(m)"
               ],
               "</span>"
             ]

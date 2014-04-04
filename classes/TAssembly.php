@@ -44,7 +44,11 @@ class TAssembly {
 					if ( is_null( $val ) ) {
 						$val = '';
 					}
-					$bits[] = htmlspecialchars( $val, ENT_XML1 );
+					if ( defined( 'ENT_XML1' ) ) {
+						$bits[] = htmlspecialchars( $val, ENT_XML1 );
+					} else {
+						$bits[] = htmlspecialchars( $val, ENT_NOQUOTES );
+					}
 				} elseif ( is_callable( 'self::ctlFn_' . $ctlFn ) ) {
 					$bits[] = call_user_func( 'self::ctlFn_' . $ctlFn, $ctlOpts, $context );
 				} elseif ( array_key_exists( $ctlFn, $context->f ) ) {
@@ -124,7 +128,7 @@ class TAssembly {
 				}
 				$remainingExpr = substr( $expr, $i+1 );
 				if ( preg_match( '/[pri]/', $expr[$i+1] )
-					&& preg_match( '/(?:p[cm]s?|rm|i)(?:[\.\)\]}]|$)/', $remainingExpr ) )
+					&& preg_match( '/(?:p[cm]s?|r[cm]|i)(?:[\.\)\]}]|$)/', $remainingExpr ) )
 				{
 					// This is an expression referencing the parent, root, or iteration scopes
 					$result .= "\$context['";
@@ -287,8 +291,13 @@ class TAssembly {
 			}
 			 */
 			if ($attVal != null) {
-				return ' ' . $name . '="' .
-					htmlspecialchars( $attVal, ENT_XML1 | ENT_COMPAT ) . '"';
+				if ( defined( 'ENT_XML1' ) ) {
+					$escaped = htmlspecialchars( $attVal, ENT_XML1 | ENT_COMPAT ) . '"';
+				} else {
+					$escaped = htmlspecialchars( $attVal, ENT_COMPAT ) . '"';
+				}
+				return ' ' . $name . '="' . $escaped;
+
 			}
 		}
 	}

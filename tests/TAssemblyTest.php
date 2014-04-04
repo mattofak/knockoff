@@ -1,6 +1,6 @@
 <?php
 namespace TAssembly;
-require_once('classes/TAssembly.php');
+require_once( __DIR__ . '/../classes/TAssembly.php');
 
 /**
  * @group Extensions/Knockoff
@@ -22,6 +22,8 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 	 * @dataProvider renderProvider
 	 */
 	public function testRender( $tassembly, $model, TAssemblyOptions $options, $expectation ) {
+		$options->globals['echo'] = function ($foo) { return $foo; };
+		$options->globals['echoJSON'] = function ($foo) { return json_encode($foo); };
 		$result = $this->ta->render(
 			$tassembly,
 			$model,
@@ -38,8 +40,6 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 			$options = new TAssemblyOptions();
 			$options->partials = $testObj['partials']['tassembly'];
 			$model = $testObj['model'];
-			$model['echo'] = function ($foo) { return $foo; };
-			$model['echoJSON'] = function ($foo) { return json_encode($foo); };
 
 			foreach ( $testObj['tests'] as &$test ) {
 				$tests[] = array( $test['tassembly'], $model, $options, $test['result'] );
