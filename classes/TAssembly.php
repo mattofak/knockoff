@@ -26,13 +26,24 @@ class TAssembly {
 		if ( $options == null ) {
 			$options = new TAssemblyOptions();
 		}
-		$context = self::createRootContext( $model, $options );
-		return TAssembly::render_context( $ir, $context );
+
+		$ctx = Array (
+			'rm' => $model,
+			'm' => $model,
+			'pm' => null,
+			'pms' => array(),
+			'pcs' => array(),
+			'g' => $options->globals,
+			'options' => $options
+		);
+		$ctx['rc'] = &$ctx;
+
+		return TAssembly::render_context( $ir, $ctx );
 	}
 
 
 	protected static function render_context( array &$ir, Array &$context ) {
-		$bits = array();
+		$bits = '';
 		static $builtins = Array (
 			'foreach' => true,
 			'attr' => true,
@@ -44,7 +55,7 @@ class TAssembly {
 
 		foreach( $ir as $bit ) {
 			if ( is_string( $bit ) ) {
-				$bits[] = $bit;
+				$bits .= $bit;
 			} elseif ( is_array( $bit ) ) {
 				// Control function
 				$ctlFn = $bit[0];
@@ -55,15 +66,17 @@ class TAssembly {
 						$val = '';
 					}
 					if ( defined( 'ENT_XML1' ) ) {
-						$bits[] = htmlspecialchars( $val, ENT_XML1 );
+						$bits .= htmlspecialchars( $val, ENT_XML1 );
 					} else {
-						$bits[] = htmlspecialchars( $val, ENT_NOQUOTES );
+						$bits .= htmlspecialchars( $val, ENT_NOQUOTES );
 					}
+				} elseif ( $ctlFn === 'attr' ) {
+					$bits .= self::ctlFn_attr( $ctlOpts, $context );
 				} elseif ( isset($builtins[$ctlFn]) ) {
 					$ctlFn = 'ctlFn_' . $ctlFn;
-					$bits[] = self::$ctlFn( $ctlOpts, $context );
+					$bits .= self::$ctlFn( $ctlOpts, $context );
 				} elseif ( array_key_exists( $ctlFn, $context->f ) ) {
-					$bits[] = $context->f[$ctlFn]( $ctlOpts, $context );
+					$bits .= $context->f[$ctlFn]( $ctlOpts, $context );
 				} else {
 					throw new TAssemblyException( "Function '$ctlFn' does not exist in the context.", $bit );
 				}
@@ -72,7 +85,7 @@ class TAssembly {
 			}
 		}
 
-		return join('', $bits);
+		return $bits;
 	}
 
 	/**
@@ -214,21 +227,6 @@ class TAssembly {
 			$result .= "']";
 		}
 		return $result;
-	}
-
-	public static function createRootContext( &$model, TAssemblyOptions &$options ) {
-		$ctx = Array (
-			'rm' => $model,
-			'm' => $model,
-			'pm' => null,
-			'pms' => array(),
-			'pcs' => array(),
-			'g' => $options->globals,
-			'options' => $options
-		);
-		$ctx['rc'] = &$ctx;
-
-		return $ctx;
 	}
 
 	protected static function createChildCtx ( &$parCtx, &$model ) {
