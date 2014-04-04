@@ -11,7 +11,6 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 
 	protected function setUp() {
 		parent::setUp();
-		$this->ta = new TAssembly();
 	}
 
 	protected function tearDown() {
@@ -21,10 +20,8 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 	/**
 	 * @dataProvider renderProvider
 	 */
-	public function testRender( $tassembly, $model, TAssemblyOptions $options, $expectation ) {
-		$options->globals['echo'] = function ($foo) { return $foo; };
-		$options->globals['echoJSON'] = function ($foo) { return json_encode($foo); };
-		$result = $this->ta->render(
+	public function testRender( $tassembly, $model, Array $options, $expectation ) {
+			$result = TAssembly::render(
 			$tassembly,
 			$model,
 			$options
@@ -37,8 +34,13 @@ class TAssemblyTest extends \PHPUnit_Framework_TestCase {
 		$files = glob( __DIR__ . '/vectors/TAssembly.*.json' );
 		foreach ( $files as $file ) {
 			$testObj = json_decode( file_get_contents( $file ), true );
-			$options = new TAssemblyOptions();
-			$options->partials = $testObj['partials']['tassembly'];
+			$options = Array(
+				'partials' => $testObj['partials']['tassembly'],
+				'globals' => Array(
+					'echo' => function ($foo) { return $foo; },
+					'echoJSON' => function ($foo) { return json_encode($foo); },
+				),
+			);
 			$model = $testObj['model'];
 
 			foreach ( $testObj['tests'] as &$test ) {

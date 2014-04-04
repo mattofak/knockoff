@@ -56,7 +56,7 @@ class TAssembly {
 				$ctlOpts = $bit[1];
 				if ( $ctlFn === 'text' ) {
 					if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $ctlOpts, $matches) ) {
-						$val = $ctx['m'][$matches[1]];
+						$val = @$ctx['m'][$matches[1]];
 					} else {
 						$val = TAssembly::evaluate_expression( $ctlOpts, $ctx );
 					}
@@ -67,7 +67,7 @@ class TAssembly {
 					foreach($ctlOpts as $name => &$val) {
 						if (is_string($val)) {
 							if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $val, $matches) ) {
-								$attVal = $ctx['m'][$matches[1]];
+								$attVal = @$ctx['m'][$matches[1]];
 							} else {
 								$attVal = TAssembly::evaluate_expression( $ctlOpts, $ctx );
 							}
@@ -132,7 +132,7 @@ class TAssembly {
 	protected static function evaluate_expression( &$expr, Array &$context ) {
 		// Simple variable
 		if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $expr, $matches) ) {
-			return $context['m'][$matches[1]];
+			return @$context['m'][$matches[1]];
 		}
 
 		// String literal
@@ -176,8 +176,8 @@ class TAssembly {
 		$inArray = false;
 
 		do {
-			if ( preg_match( '/^$|[\[:(]/', $c ) ) {
-				// Match the empty string (start of expression), or one of [, :, (
+			if ( preg_match( '/^$|[\[:(m]/', $c ) ) {
+				// Match the empty string (start of expression), or one of '[:(,'
 				if ( $inArray ) {
 					// close the array reference
 					$result .= "']";
@@ -288,7 +288,7 @@ class TAssembly {
 			return '';
 		}
 		$bits = array();
-		$newCtx = self::createChildCtx($ctx, null);
+		$newCtx = self::createChildCtx($ctx, $ctx);
 		$len = count($iterable);
 		for ($i = 0; $i < $len; $i++) {
 			$newCtx['m'] = &$iterable[$i];
