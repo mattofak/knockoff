@@ -76,7 +76,16 @@ class TAssembly {
 	 */
 	protected static function evaluate_expression( $expr, Array $context ) {
 		// Simple variable
-		$matches = array();
+		if ( preg_match( '/m\.([a-zA-Z_$]+)$/', $expr, $matches) ) {
+			return $context['m'][$matches[1]];
+		}
+
+		// String literal
+		if ( preg_match( '/^\'.*\'$/', $expr ) ) {
+			return str_replace( '\\\'', '\'', substr( $expr, 1, -1 ) );
+		}
+
+		// More complex var
 		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)(?:\.([a-zA-Z_$]+))?$/', $expr, $matches ) ) {
 			list( $x, $member ) = $matches;
 			$key = count($matches) == 3 ? $matches[2] : false;
@@ -87,11 +96,6 @@ class TAssembly {
 				$res = $context[$member];
 				return $res ? $res : '';
 			}
-		}
-
-		// String literal
-		if ( preg_match( '/^\'.*\'$/', $expr ) ) {
-			return str_replace( '\\\'', '\'', substr( $expr, 1, -1 ) );
 		}
 
 		// More complex expression which must be rewritten to use PHP style accessors
