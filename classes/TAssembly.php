@@ -22,23 +22,19 @@ class TAssembly {
 	 *
 	 * @return string HTML
 	 */
-	public static function render( array &$ir, array &$model = array(), Array &$options = null ) {
-		if ( $options == null ) {
-			$options = Array('globals' => array());
-		}
-
+	public static function render( array &$ir, array &$model = array(), Array &$options = Array() ) {
 		$ctx = Array (
-			'rm' => $model,
-			'm' => $model,
+			'rm' => &$model,
+			'm' => &$model,
 			'pm' => null,
 			'pms' => array(),
 			'pcs' => array(),
-			'g' => $options['globals'],
-			'options' => $options
+			'g' => isset($options['globals']) ? $options['globals'] : Array(),
+			'options' => &$options
 		);
 		$ctx['rc'] = &$ctx;
 
-		return TAssembly::render_context( $ir, $ctx );
+		return self::render_context( $ir, $ctx );
 	}
 
 
