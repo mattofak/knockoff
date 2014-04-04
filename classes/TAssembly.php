@@ -22,7 +22,7 @@ class TAssembly {
 	 *
 	 * @return string HTML
 	 */
-	public static function render( array $ir, array $model = array(), TAssemblyOptions $options = null ) {
+	public static function render( array &$ir, array &$model = array(), TAssemblyOptions &$options = null ) {
 		if ( $options == null ) {
 			$options = new TAssemblyOptions();
 		}
@@ -30,8 +30,17 @@ class TAssembly {
 		return TAssembly::render_context( $ir, $context );
 	}
 
-	protected static function render_context( array $ir, Array $context ) {
+
+	protected static function render_context( array &$ir, Array &$context ) {
 		$bits = array();
+		static $builtins = Array (
+			'foreach' => true,
+			'attr' => true,
+			'if' => true,
+			'ifnot' => true,
+			'with' => true,
+			'template' => true,
+		);
 
 		foreach( $ir as $bit ) {
 			if ( is_string( $bit ) ) {
@@ -49,8 +58,9 @@ class TAssembly {
 					} else {
 						$bits[] = htmlspecialchars( $val, ENT_NOQUOTES );
 					}
-				} elseif ( is_callable( 'self::ctlFn_' . $ctlFn ) ) {
-					$bits[] = call_user_func( 'self::ctlFn_' . $ctlFn, $ctlOpts, $context );
+				} elseif ( isset($builtins[$ctlFn]) ) {
+					$ctlFn = 'ctlFn_' . $ctlFn;
+					$bits[] = self::$ctlFn( $ctlOpts, $context );
 				} elseif ( array_key_exists( $ctlFn, $context->f ) ) {
 					$bits[] = $context->f[$ctlFn]( $ctlOpts, $context );
 				} else {
@@ -65,7 +75,7 @@ class TAssembly {
 	}
 
 	/**
-	 * Evaluate a simple expression.
+	 * Evaluate an expression in the given context
 	 *
 	 * Note: This uses php eval(); we are relying on the compiler to
 	 * make sure nothing dangerous is passed in.
@@ -74,7 +84,7 @@ class TAssembly {
 	 * @param Array $context
 	 * @return mixed|string
 	 */
-	protected static function evaluate_expression( $expr, Array $context ) {
+	protected static function evaluate_expression( &$expr, Array &$context ) {
 		// Simple variable
 		if ( preg_match( '/m\.([a-zA-Z_$]+)$/', $expr, $matches) ) {
 			return $context['m'][$matches[1]];
@@ -112,7 +122,7 @@ class TAssembly {
 	 *
 	 * TODO: error checking for member access
 	 */
-	protected static function rewriteExpression( $expr ) {
+	protected static function rewriteExpression( &$expr ) {
 		$result = '';
 		$i = -1;
 		$c = '';
@@ -204,7 +214,7 @@ class TAssembly {
 		return $result;
 	}
 
-	public static function createRootContext( $model, TAssemblyOptions $options ) {
+	public static function createRootContext( &$model, TAssemblyOptions &$options ) {
 		$ctx = Array (
 			'rm' => $model,
 			'm' => $model,
@@ -219,7 +229,7 @@ class TAssembly {
 		return $ctx;
 	}
 
-	protected static function createChildCtx ( $parCtx, $model ) {
+	protected static function createChildCtx ( &$parCtx, &$model ) {
 		$ctx = Array(
 			'm' => $model,
 			'pc' => $parCtx,
@@ -232,7 +242,7 @@ class TAssembly {
 		return $ctx;
 	}
 
-	protected static function getTemplate($tpl, $ctx) {
+	protected static function getTemplate(&$tpl, &$ctx) {
 		if (is_array($tpl)) {
 			return $tpl;
 		} else {
@@ -242,7 +252,7 @@ class TAssembly {
 		}
 	}
 
-	protected static function ctlFn_foreach ($opts, $ctx) {
+	protected static function ctlFn_foreach (&$opts, &$ctx) {
 		$iterable = self::evaluate_expression($opts['data'], $ctx);
 		if (!is_array($iterable)) {
 			return '';
@@ -259,7 +269,7 @@ class TAssembly {
 		return join('', $bits);
 	}
 
-	protected static function ctlFn_template ($opts, $ctx) {
+	protected static function ctlFn_template (&$opts, &$ctx) {
 		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
 		$tpl = self::getTemplate($opts['tpl'], $ctx);
 		$newCtx = self::createChildCtx($ctx, $model);
@@ -268,7 +278,7 @@ class TAssembly {
 		}
 	}
 
-	protected static function ctlFn_with ($opts, $ctx) {
+	protected static function ctlFn_with (&$opts, &$ctx) {
 		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
 		$tpl = self::getTemplate($opts['tpl'], $ctx);
 		if ($model && $tpl) {
@@ -277,19 +287,19 @@ class TAssembly {
 		}
 	}
 
-	protected static function ctlFn_if ($opts, $ctx) {
+	protected static function ctlFn_if (&$opts, &$ctx) {
 		if (self::evaluate_expression($opts['data'], $ctx)) {
 			return self::render_context($opts['tpl'], $ctx);
 		}
 	}
 
-	protected static function ctlFn_ifnot ($opts, $ctx) {
+	protected static function ctlFn_ifnot (&$opts, &$ctx) {
 		if (!self::evaluate_expression($opts['data'], $ctx)) {
 			return self::render_context($opts['tpl'], $ctx);
 		}
 	}
 
-	protected static function ctlFn_attr ($opts, $ctx) {
+	protected static function ctlFn_attr (&$opts, &$ctx) {
 		foreach($opts as $name => $val) {
 			if (is_string($val)) {
 				$attVal = self::evaluate_expression($val, $ctx);
