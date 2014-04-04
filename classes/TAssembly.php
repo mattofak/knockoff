@@ -16,15 +16,15 @@ class TAssembly {
 	 *
 	 * @param string[] $ir
 	 * @param string[] $model
-	 * @param TAssemblyOptions $options
+	 * @param Array $options
 	 *
 	 * @throws TAssemblyException if a subpart is not a 2-tuple, or if a control function is not known
 	 *
 	 * @return string HTML
 	 */
-	public static function render( array &$ir, array &$model = array(), TAssemblyOptions &$options = null ) {
+	public static function render( array &$ir, array &$model = array(), Array &$options = null ) {
 		if ( $options == null ) {
-			$options = new TAssemblyOptions();
+			$options = Array('globals' => array());
 		}
 
 		$ctx = Array (
@@ -33,7 +33,7 @@ class TAssembly {
 			'pm' => null,
 			'pms' => array(),
 			'pcs' => array(),
-			'g' => $options->globals,
+			'g' => $options['globals'],
 			'options' => $options
 		);
 		$ctx['rc'] = &$ctx;
@@ -53,21 +53,14 @@ class TAssembly {
 			'template' => true,
 		);
 
-		foreach( $ir as $bit ) {
-			if ( is_string( $bit ) ) {
-				$bits .= $bit;
-			} elseif ( is_array( $bit ) ) {
+		foreach ( $ir as $bit ) {
+			if ( is_array( $bit ) ) {
 				// Control function
 				$ctlFn = $bit[0];
 				$ctlOpts = $bit[1];
 				if ( $ctlFn === 'text' ) {
 					$val = TAssembly::evaluate_expression( $ctlOpts, $context );
-					if ( is_null( $val ) ) {
-						$val = '';
-					}
-					if ( defined( 'ENT_XML1' ) ) {
-						$bits .= htmlspecialchars( $val, ENT_XML1 );
-					} else {
+					if ( ! is_null( $val ) ) {
 						$bits .= htmlspecialchars( $val, ENT_NOQUOTES );
 					}
 				} elseif ( $ctlFn === 'attr' ) {
@@ -75,13 +68,11 @@ class TAssembly {
 				} elseif ( isset($builtins[$ctlFn]) ) {
 					$ctlFn = 'ctlFn_' . $ctlFn;
 					$bits .= self::$ctlFn( $ctlOpts, $context );
-				} elseif ( array_key_exists( $ctlFn, $context->f ) ) {
-					$bits .= $context->f[$ctlFn]( $ctlOpts, $context );
 				} else {
 					throw new TAssemblyException( "Function '$ctlFn' does not exist in the context.", $bit );
 				}
 			} else {
-				throw new TAssemblyException( 'Template operation must be either string or 2-tuple (function, args)', $bit );
+				$bits .= $bit;
 			}
 		}
 
@@ -100,7 +91,7 @@ class TAssembly {
 	 */
 	protected static function evaluate_expression( &$expr, Array &$context ) {
 		// Simple variable
-		if ( preg_match( '/m\.([a-zA-Z_$]+)$/', $expr, $matches) ) {
+		if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $expr, $matches) ) {
 			return $context['m'][$matches[1]];
 		}
 
@@ -248,7 +239,7 @@ class TAssembly {
 		} else {
 			// String literal: strip quotes
 			$tpl = preg_replace('/^\'(.*)\'$/', '$1', $tpl);
-			return $ctx['rc']['options']->partials[$tpl];
+			return $ctx['rc']['options']['partials'][$tpl];
 		}
 	}
 
@@ -333,21 +324,11 @@ class TAssembly {
 			}
 			 */
 			if ($attVal != null) {
-				if ( defined( 'ENT_XML1' ) ) {
-					$escaped = htmlspecialchars( $attVal, ENT_XML1 | ENT_COMPAT ) . '"';
-				} else {
-					$escaped = htmlspecialchars( $attVal, ENT_COMPAT ) . '"';
-				}
+				$escaped = htmlspecialchars( $attVal, ENT_COMPAT ) . '"';
 				return ' ' . $name . '="' . $escaped;
-
 			}
 		}
 	}
-}
-
-class TAssemblyOptions {
-	public $partials = array();
-	public $globals = array();
 }
 
 class TAssemblyException extends \Exception {
