@@ -32,12 +32,12 @@ variable = v:varpart vs:(spc '.' vp:varpart { return vp; })*
             res = vars[0];
         // Rewrite the first path component
         if (res[0] === '$') {
-            if (options.ctxMap[res]) {
+            if (res === '$') {
+                // user-defined global context access
+                res = 'rc.g';
+            } else if (options.ctxMap[res]) {
                 // Built-in context var access
                 res = options.ctxMap[res];
-            } else if (/^\$\./.test(res)) {
-                // user-defined global context access
-                res = 'rc.g.' + res;
             } else {
                 // local model access
                 res = 'm.' + res;

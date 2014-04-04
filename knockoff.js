@@ -1,10 +1,6 @@
 "use strict";
-var TAssembly = require('tassembly').TAssembly,
+var TA = require('tassembly'),
 	koCompiler = require('./KnockoutCompiler.js');
-
-function KnockOff () {
-	this.TA = new TAssembly();
-}
 
 /**
  * Compile a Knockout template to a function
@@ -14,21 +10,21 @@ function KnockOff () {
  * @returns {function(model)} function that can be called with a model and
  *							  returns an HTML string
  */
-KnockOff.prototype.compile = function(template, options) {
+function compile(template, options) {
 	var templateASM = koCompiler.compile(template, options);
-	return this.TA.compile(templateASM, options);
-};
+	if (options.partials) {
+		// compile partials
+		var partials = options.partials;
+		for (var name in partials) {
+			if (!Array.isArray(partials[name])) {
+				partials[name] = koCompiler.compile(partials[name]);
+			}
+		}
+	}
+	return TA.compile(templateASM, options);
+}
 
-/**
- * Register a partial (nested template)
- *
- * @param {string} name of the template
- * @param {misc} template HTML string or DOM node
- **/
-KnockOff.prototype.registerPartial = function(name, template) {
-	this.TA.partials[name] = koCompiler.compile(template);
-};
 
 module.exports = {
-	KnockOff: KnockOff
+	compile: compile
 };

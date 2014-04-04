@@ -1,16 +1,11 @@
 "use strict";
-var KO = require('./knockoff.js'),
+var ko = require('./knockoff.js'),
 	c = require('./KnockoutCompiler');
 
 
-var ko = new KO.KnockOff();
-// Register a partial
-ko.registerPartial('testPartial',
-		'<span data-bind="text:foo"></span><span data-bind="text:bar"></span>');
-
-var testData = {
-	arr: [1,2,3,4,5,6,7],
-	items: [
+var model = {
+		arr: [1,2,3,4,5,6,7],
+		items: [
 		{
 			key: 'key1',
 			value: 'value1'
@@ -19,28 +14,35 @@ var testData = {
 			key: 'key2',
 			value: 'value2'
 		}
-	],
-	obj: {
-		foo: "foo",
-		bar: "bar"
+		],
+			obj: {
+				foo: "foo",
+				bar: "bar"
+			},
+			name: 'Some name',
+			content: 'Some sample content',
+			id: 'mw1234',
+			predTrue: true,
+			predFalse: false,
+			nullItem: null,
+			someItems: [
+			{ childProp: 'first child' },
+			{ childProp: 'second child' }
+		]
 	},
-	name: 'Some name',
-	content: 'Some sample content',
-	id: 'mw1234',
-	predTrue: true,
-	predFalse: false,
-	nullItem: null,
-	someItems: [
-		{ childProp: 'first child' },
-		{ childProp: 'second child' }
-	],
-	echo: function(i) {
-		return i;
-	},
-	echoJSON: function(i) {
-		return JSON.stringify(i);
-	}
-};
+	options = {
+		globals: {
+			echo: function(i) {
+				return i;
+			},
+			echoJSON: function(i) {
+				return JSON.stringify(i);
+			}
+		},
+		partials: {
+			'testPartial': '<span data-bind="text:foo"></span><span data-bind="text:bar"></span>'
+		}
+	};
 
 var tests = {
 	partials: {
@@ -51,16 +53,16 @@ var tests = {
 			testPartial: c.compile('<span data-bind="text:foo"></span><span data-bind="text:bar"></span>')
 		}
 	},
-	model: testData,
+	model: model,
 	tests: []
 };
 
 function test(input) {
-	var tpl = ko.compile(input),
+	var tpl = ko.compile(input, options),
 		testObj = {
 			knockout: input,
 			tassembly: c.compile(input),
-			result: tpl(testData)
+			result: tpl(model)
 		};
 	//console.log('=========================');
 	//console.log('Knockout template:');
@@ -116,9 +118,9 @@ test('<div data-bind="with:obj"><span data-bind="text:foo"></span></div>');
 
 test('<div data-bind="attr:{id:id},foreach:items"><div data-bind="attr:{id:key},text:value"></div></div>');
 
-test('<div data-bind="foreach:arr"><div data-bind="text:$parent.echo($data)"></div></div>');
+test('<div data-bind="foreach:arr"><div data-bind="text:$.echo($data)"></div></div>');
 
-test('<div data-bind="text: echoJSON( { id : &quot;id&quot; } )"></div>');
+test('<div data-bind="text: $.echoJSON( { id : &quot;id&quot; } )"></div>');
 
 /**
  * KnockoutJS tests
@@ -135,7 +137,7 @@ test("<div class='oldClass' data-bind=\"attr: {'class': myprop}\"></div>");
 test("<div data-bind='foreach: nullItem'><span data-bind='text: nullItem.nonExistentChildProp'></span></div>");
 test("<div data-bind='foreach: someItems'><span data-bind='text: childProp'></span></div>");
 //test("<div data-bind='foreach: [1, 2]'><span></span></div>");
-test("<div data-bind='foreach: someItems'><span data-bind='text: $root.echoJSON($data)'></span></div>");
+test("<div data-bind='foreach: someItems'><span data-bind='text: $.echoJSON($data)'></span></div>");
 test("<div data-bind='foreach: someItems'><span data-bind='text: childProp'></span></div>");
 //test("<div data-bind='foreach: someitems'>a<!-- ko if:true -->b<!-- /ko --></div>");
 //test("x-<!--ko foreach: someitems--><!--ko test:$data--><!--/ko--><!--/ko-->");
