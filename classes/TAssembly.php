@@ -10,7 +10,7 @@ use Exception;
  * @license The MIT License (MIT); see LICENSE.txt
  */
 
-class TAssembly {
+//class TAssembly {
 	/**
 	 * Render an intermediate representation object into HTML
 	 *
@@ -22,7 +22,11 @@ class TAssembly {
 	 *
 	 * @return string HTML
 	 */
-	public static function render( array &$ir, array &$model = array(), Array &$options = Array() ) {
+	function render( array &$ir, array &$model = array(), Array &$options = null ) {
+		if ( $options == null ) {
+			$options = Array('globals' => array());
+		}
+
 		$ctx = Array (
 			'rm' => &$model,
 			'm' => &$model,
@@ -34,11 +38,11 @@ class TAssembly {
 		);
 		$ctx['rc'] = &$ctx;
 
-		return self::render_context( $ir, $ctx );
+		return render_context( $ir, $ctx );
 	}
 
 
-	protected static function render_context( array &$ir, Array &$context ) {
+	function render_context( array &$ir, Array &$context ) {
 		$bits = '';
 		static $builtins = Array (
 			'foreach' => true,
@@ -55,15 +59,15 @@ class TAssembly {
 				$ctlFn = $bit[0];
 				$ctlOpts = $bit[1];
 				if ( $ctlFn === 'text' ) {
-					$val = TAssembly::evaluate_expression( $ctlOpts, $context );
+					$val = evaluate_expression( $ctlOpts, $context );
 					if ( ! is_null( $val ) ) {
 						$bits .= htmlspecialchars( $val, ENT_NOQUOTES );
 					}
 				} elseif ( $ctlFn === 'attr' ) {
-					$bits .= self::ctlFn_attr( $ctlOpts, $context );
+					$bits .= ctlFn_attr( $ctlOpts, $context );
 				} elseif ( isset($builtins[$ctlFn]) ) {
 					$ctlFn = 'ctlFn_' . $ctlFn;
-					$bits .= self::$ctlFn( $ctlOpts, $context );
+					$bits .= $ctlFn( $ctlOpts, $context );
 				} else {
 					throw new TAssemblyException( "Function '$ctlFn' does not exist in the context.", $bit );
 				}
@@ -85,7 +89,7 @@ class TAssembly {
 	 * @param Array $context
 	 * @return mixed|string
 	 */
-	protected static function evaluate_expression( &$expr, Array &$context ) {
+	function evaluate_expression( &$expr, Array &$context ) {
 		// Simple variable
 		if ( preg_match( '/^m\.([a-zA-Z_$]+)$/', $expr, $matches) ) {
 			return $context['m'][$matches[1]];
@@ -111,7 +115,7 @@ class TAssembly {
 		}
 
 		// More complex expression which must be rewritten to use PHP style accessors
-		$newExpr = self::rewriteExpression( $expr );
+		$newExpr = rewriteExpression( $expr );
 		//echo $newExpr . "\n";
 		$model = $context['m'];
 		return eval('return ' . $newExpr . ';');
@@ -124,7 +128,7 @@ class TAssembly {
 	 *
 	 * TODO: error checking for member access
 	 */
-	protected static function rewriteExpression( &$expr ) {
+	function rewriteExpression( &$expr ) {
 		$result = '';
 		$i = -1;
 		$c = '';
@@ -216,7 +220,7 @@ class TAssembly {
 		return $result;
 	}
 
-	protected static function createChildCtx ( &$parCtx, &$model ) {
+	function createChildCtx ( &$parCtx, &$model ) {
 		$ctx = Array(
 			'm' => $model,
 			'pc' => $parCtx,
@@ -229,7 +233,7 @@ class TAssembly {
 		return $ctx;
 	}
 
-	protected static function getTemplate(&$tpl, &$ctx) {
+	function getTemplate(&$tpl, &$ctx) {
 		if (is_array($tpl)) {
 			return $tpl;
 		} else {
@@ -239,68 +243,68 @@ class TAssembly {
 		}
 	}
 
-	protected static function ctlFn_foreach (&$opts, &$ctx) {
-		$iterable = self::evaluate_expression($opts['data'], $ctx);
+	function ctlFn_foreach (&$opts, &$ctx) {
+		$iterable = evaluate_expression($opts['data'], $ctx);
 		if (!is_array($iterable)) {
 			return '';
 		}
 		$bits = array();
-		$newCtx = self::createChildCtx($ctx, null);
+		$newCtx = createChildCtx($ctx, null);
 		$len = count($iterable);
 		for ($i = 0; $i < $len; $i++) {
 			$newCtx['m'] = $iterable[$i];
 			$newCtx['pms'][0] = $iterable[$i];
 			$newCtx['i'] = $i;
-			$bits[] = self::render_context($opts['tpl'], $newCtx);
+			$bits[] = render_context($opts['tpl'], $newCtx);
 		}
 		return join('', $bits);
 	}
 
-	protected static function ctlFn_template (&$opts, &$ctx) {
-		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
-		$tpl = self::getTemplate($opts['tpl'], $ctx);
-		$newCtx = self::createChildCtx($ctx, $model);
+	function ctlFn_template (&$opts, &$ctx) {
+		$model = $opts['data'] ? evaluate_expression($opts['data'], $ctx) : $ctx->m;
+		$tpl = getTemplate($opts['tpl'], $ctx);
+		$newCtx = createChildCtx($ctx, $model);
 		if ($tpl) {
-			return self::render_context($tpl, $newCtx);
+			return render_context($tpl, $newCtx);
 		}
 	}
 
-	protected static function ctlFn_with (&$opts, &$ctx) {
-		$model = $opts['data'] ? self::evaluate_expression($opts['data'], $ctx) : $ctx->m;
-		$tpl = self::getTemplate($opts['tpl'], $ctx);
+	function ctlFn_with (&$opts, &$ctx) {
+		$model = $opts['data'] ? evaluate_expression($opts['data'], $ctx) : $ctx->m;
+		$tpl = getTemplate($opts['tpl'], $ctx);
 		if ($model && $tpl) {
-			$newCtx = self::createChildCtx($ctx, $model);
-			return self::render_context($tpl, $newCtx);
+			$newCtx = createChildCtx($ctx, $model);
+			return render_context($tpl, $newCtx);
 		}
 	}
 
-	protected static function ctlFn_if (&$opts, &$ctx) {
-		if (self::evaluate_expression($opts['data'], $ctx)) {
-			return self::render_context($opts['tpl'], $ctx);
+	function ctlFn_if (&$opts, &$ctx) {
+		if (evaluate_expression($opts['data'], $ctx)) {
+			return render_context($opts['tpl'], $ctx);
 		}
 	}
 
-	protected static function ctlFn_ifnot (&$opts, &$ctx) {
-		if (!self::evaluate_expression($opts['data'], $ctx)) {
-			return self::render_context($opts['tpl'], $ctx);
+	function ctlFn_ifnot (&$opts, &$ctx) {
+		if (!evaluate_expression($opts['data'], $ctx)) {
+			return render_context($opts['tpl'], $ctx);
 		}
 	}
 
-	protected static function ctlFn_attr (&$opts, &$ctx) {
+	function ctlFn_attr (&$opts, &$ctx) {
 		foreach($opts as $name => $val) {
 			if (is_string($val)) {
-				$attVal = self::evaluate_expression($val, $ctx);
+				$attVal = evaluate_expression($val, $ctx);
 			} else {
 				// must be an object
 				$attVal = $val['v'] ? $val['v'] : '';
 				if (is_array($val['app'])) {
 					foreach ($val['app'] as $appItem) {
 						if (array_key_exists('if', $appItem)
-							&& self::evaluate_expression($appItem['if'], $ctx)) {
+							&& evaluate_expression($appItem['if'], $ctx)) {
 							$attVal .= $appItem['v'] ? $appItem['v'] : '';
 						}
 						if (array_key_exists('ifnot', $appItem)
-							&& ! self::evaluate_expression($appItem['ifnot'], $ctx)) {
+							&& ! evaluate_expression($appItem['ifnot'], $ctx)) {
 							$attVal .= $appItem['v'] ? $appItem['v'] : '';
 						}
 					}
@@ -313,9 +317,9 @@ class TAssembly {
 			 * TODO: hook up sanitization to MW sanitizer via options?
 			if ($attVal != null) {
 				if ($name == 'href' || $name == 'src') {
-					$attVal = self::sanitizeHref($attVal);
+					$attVal = sanitizeHref($attVal);
 				} else if ($name == 'style') {
-					$attVal = self::sanitizeStyle($attVal);
+					$attVal = sanitizeStyle($attVal);
 				}
 			}
 			 */
@@ -325,7 +329,7 @@ class TAssembly {
 			}
 		}
 	}
-}
+//}
 
 class TAssemblyException extends \Exception {
 	public function __construct($message = "", $ir = '', $code = 0, Exception $previous = null) {
