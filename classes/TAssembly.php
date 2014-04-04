@@ -45,9 +45,10 @@ class TAssembly {
 		foreach( $ir as $bit ) {
 			if ( is_string( $bit ) ) {
 				$bits[] = $bit;
-			} elseif ( is_array( $bit ) && count( $bit ) === 2 ) {
+			} elseif ( is_array( $bit ) ) {
 				// Control function
-				list( $ctlFn, $ctlOpts ) = $bit;
+				$ctlFn = $bit[0];
+				$ctlOpts = $bit[1];
 				if ( $ctlFn === 'text' ) {
 					$val = TAssembly::evaluate_expression( $ctlOpts, $context );
 					if ( is_null( $val ) ) {
@@ -97,8 +98,9 @@ class TAssembly {
 
 		// More complex var
 		if ( preg_match( '/^(m|p(?:[cm]s?)?|rm|i|c)(?:\.([a-zA-Z_$]+))?$/', $expr, $matches ) ) {
-			list( $x, $member ) = $matches;
-			$key = count($matches) == 3 ? $matches[2] : false;
+			$x = $matches[0];
+			$member = $matches[1];
+			$key = isset($matches[2]) ? $matches[2] : false;
 			if ( $key && is_array( $context[$member] ) ) {
 				return ( array_key_exists( $key, $context[$member] ) ?
 					$context[$member][$key] : '' );
