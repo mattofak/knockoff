@@ -1,8 +1,6 @@
 <?php
 require_once(dirname(__FILE__) . '/../classes/TAssembly.php');
 
-$ta = new TAssembly\TAssembly();
-
 $tests = json_decode(file_get_contents(dirname(__FILE__) .
 	'/../tests/vectors/TAssembly.PartialsTest.json'), true);
 foreach ($tests['tests'] as $test) {
@@ -18,7 +16,7 @@ foreach ($tests['tests'] as $test) {
 			},
 		),
 	);
-	$res = $ta->render($test['tassembly'], $model, $options);
+	$res = TAssembly::render($test['tassembly'], $model, $options);
 	if ($res != $test['result']) {
 		echo 'FAIL  : ' . json_encode($test['tassembly']) .
 			"\n		Expected: " . $test['result'] .

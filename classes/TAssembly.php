@@ -1,5 +1,4 @@
-<?php namespace TAssembly;
-use Exception;
+<?php
 
 /**
  * Template assembly language (tassembly) PHP runtime.

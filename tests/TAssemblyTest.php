@@ -1,5 +1,4 @@
 <?php
-namespace TAssembly;
 require_once( __DIR__ . '/../classes/TAssembly.php');
 
 /**
